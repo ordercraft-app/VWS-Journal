@@ -20,7 +20,7 @@
 // ---------- Release switch ----------
 // false = rules are hidden for everyone and nothing is added to settings.json.
 // true  = rules are visible for everyone.
-const RULES_FEATURE_ENABLED = true;
+const RULES_FEATURE_ENABLED = false;
 
 // Per-browser override for testing: open the app once with ?rules=on or ?rules=off.
 // This browser remembers the choice; other people are not affected.

@@ -1636,3 +1636,6 @@ a.gate-link { text-align: center; width: fit-content; }
 
 .rules-unlock-msg.is-ok { color: var(--success); }
 .faq-answer .faq-code-btn { margin-top: 12px; }
+
+/* Help: the FAQ about rules only shows while the rules are on */
+html:not(.rules-on) .faq-rules { display: none; }
