@@ -160,6 +160,11 @@ function rulesTier() {
     return 'none';
 }
 
+// Own system (system.js): no codes, no locks, no default rules
+function rulesOwnSystem() {
+    return !!(appData.settings && appData.settings.systemMode === 'own');
+}
+
 function rulesTierRank(t) {
     return t === 'all' ? 2 : t === 'core' ? 1 : 0;
 }
@@ -192,8 +197,9 @@ function rulesIsAdvancedSetup(name) {
     return rulesNameIn(RULES_ADVANCED, name);
 }
 
-// A setup whose default rules still need a code
+// A setup whose default rules still need a code (never in the own system)
 function rulesSetupLocked(name) {
+    if (rulesOwnSystem()) return false;
     const t = rulesTier();
     if (rulesIsAdvancedSetup(name)) return t !== 'all';
     if (rulesIsCoreSetup(name)) return t === 'none';
@@ -204,6 +210,7 @@ function rulesSetupLocked(name) {
 // of settings.json (rules people added themselves have other ids and stay).
 // Trades keep their own copy of the rules they were rated on.
 function rulesRemoveLockedDefaults() {
+    if (rulesOwnSystem()) return;
     const rules = appData.settings.rules;
     if (!rulesIsObject(rules)) return;
     const t = rulesTier();
@@ -612,7 +619,7 @@ function rulesMigrate() {
     const sets = appData.settings;
     if (!sets.migrations) sets.migrations = {};
     if (!sets.migrations.defaultSetupRules) {
-        if (!rulesIsObject(sets.rules)) sets.rules = rulesBuildDefaults();
+        if (!rulesIsObject(sets.rules)) sets.rules = rulesOwnSystem() ? { _all: [] } : rulesBuildDefaults();
         sets.migrations.defaultSetupRules = true;
     }
     if (!sets.features || typeof sets.features !== 'object') sets.features = {};
@@ -1145,7 +1152,7 @@ function renderRulesSettings(container, onChange) {
         });
         row.appendChild(picks);
         card.appendChild(row);
-        card.appendChild(rulesUnlockRowEl());
+        if (!rulesOwnSystem()) card.appendChild(rulesUnlockRowEl());
     }
 
     if (!enabled) {
@@ -1336,14 +1343,21 @@ function renderRulesSettings(container, onChange) {
     restore.className = 'btn-secondary btn-sm';
     restore.textContent = 'Restore default rules';
     restore.onclick = async () => {
-        if (!(await appConfirm({ title: 'Restore the default rules?', message: 'All your rules are replaced by the default rules. Trades you already logged keep their own rules.', confirmText: 'Restore defaults', tone: 'primary', icon: 'undo' }))) return;
+        if (!(await appConfirm({ title: 'Restore the default rules?', message: 'Default rules you changed or deleted are put back as they were. Rules you added yourself stay as they are. Trades you already logged keep their own rules.', confirmText: 'Restore defaults', tone: 'primary', icon: 'undo' }))) return;
+        // Own rules (ids that don't start with "d-") stay, after the defaults
+        const mine = {};
+        Object.keys(sets.rules || {}).forEach(k => {
+            const own = (Array.isArray(sets.rules[k]) ? sets.rules[k] : []).filter(r => !(r && typeof r.id === 'string' && r.id.startsWith('d-')));
+            if (own.length) mine[k] = own;
+        });
         sets.rules = rulesBuildDefaults();
+        Object.keys(mine).forEach(k => { sets.rules[k] = [...(sets.rules[k] || []), ...mine[k]]; });
         rulesEnsureShape();
         onChange();
         renderSettingsUI();
         showToast('Default rules restored', 'success');
     };
-    foot.appendChild(restore);
+    if (!rulesOwnSystem()) foot.appendChild(restore);
     card.appendChild(foot);
 }
 

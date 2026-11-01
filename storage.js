@@ -272,6 +272,8 @@ function migrateSettings() {
     }
     // Rule check per setup (rules.js): does nothing while the feature is hidden
     if (typeof rulesMigrate === 'function') rulesMigrate();
+    // VWS Journal system or own system (system.js)
+    if (typeof systemSync === 'function') systemSync();
 }
 
 async function loadDataFromFile() {

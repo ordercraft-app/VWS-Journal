@@ -1212,6 +1212,8 @@ function renderSettingsContent() {
     const onSettingsChange = async () => { await autoSave(); };
 
     if (currentSettingsTab === 'journal') {
+        // VWS Journal system / own system (system.js)
+        if (typeof systemSettingsEl === 'function') settingsContainer.appendChild(systemSettingsEl());
         const banner = document.createElement('div');
         banner.className = 'info-banner';
         banner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><span><strong>Tip:</strong> Add a parameter by typing and pressing <strong>comma ( , )</strong> or <strong>Enter</strong>. You can easily drag & drop parameters and categories to reorder them!</span>`;

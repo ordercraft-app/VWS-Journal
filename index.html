@@ -674,7 +674,7 @@
                             </div>
                         </div>
 
-                        <div class="faq-item faq-rules">
+                        <div class="faq-item faq-rules faq-codes">
                             <div class="faq-question">
                                 <span>How do I get the rules for the setups?</span>
                                 <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -744,14 +744,36 @@
 
                         <div class="faq-item">
                             <div class="faq-question">
-                                <span>I messed up my settings. How can I reset them to default?</span>
+                                <span>How do I reset my settings to the default?</span>
                                 <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                             <div class="faq-answer">
-                                <p>No worries! First, delete the <strong><code>settings.json</code></strong> file from your local folder on your computer. Then, click the button below to download a fresh copy of the default settings. Move this new file into your folder and refresh the app.</p>
-                                <button id="btn-reset-settings" class="btn-secondary btn-sm" style="margin-top: 12px; margin-bottom: 8px;">Download Default Settings</button>
+                                <p>Go to <strong>Settings &gt; Journal</strong> and click <strong>Reset to default</strong> in the VWS Journal system card.</p>
+                                <ul>
+                                    <li>Location, Market condition, Setup, Evidence, Invalidation, Target and all rules go back to the default VWS settings. Setups and rules you added yourself are removed.</li>
+                                    <li>Symbol, Direction, Psychology, your codes, your charts and your trades stay as they are.</li>
+                                    <li class="faq-rules">Only want the default rules back? Use <strong>Restore default rules</strong> in Settings &gt; Rules: your own rules stay.</li>
+                                    <li>Using your own system? Switch back to the VWS Journal system first (the banner at the top of Settings &gt; Journal).</li>
+                                    <li>The app doesn't open any more? Remove <strong><code>settings.json</code></strong> from your journal folder and refresh: the app starts with the default settings. Your trades stay, but codes have to be entered again.</li>
+                                </ul>
                             </div>
                         </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <span>Can I use my own trading system?</span>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Yes. The journal starts with the VWS Journal system. In <strong>Settings &gt; Journal</strong>, click <strong>Use your own system</strong>.</p>
+                                <ul>
+                                    <li>Location, Market condition, Setup, Evidence, Invalidation, Target and all rules are emptied, so you can fill them in for your own system. Symbol, Direction and Psychology stay.</li>
+                                    <li>The VWS lists and rules are kept aside. Click <strong>Use the VWS Journal system</strong> in the banner to switch back; your own lists are then kept aside in the same way.</li>
+                                    <li>Your trades never change. Values that are no longer in your lists show as "No longer in your settings".</li>
+                                </ul>
+                            </div>
+                        </div>
+
                         <div class="faq-item">
                             <div class="faq-question">
                                 <span>How do I install this as a desktop app?</span>
@@ -958,6 +980,7 @@
     <script src="gate.js"></script>
     <script src="charts.js"></script>
     <script src="rules.js"></script>
+    <script src="system.js"></script>
     <script src="app.js"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>

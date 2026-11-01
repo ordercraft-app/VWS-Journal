@@ -20,7 +20,7 @@ Private by design: no account, no subscription, no cloud. Your journal lives in 
 - **Card and list view.** Full trade cards with the screenshot, or a compact list you can expand per trade.
 - **Track your progress.** Built-in charts, such as execution growth, setup effectiveness, invalidation losses and psychology, by day, symbol, market condition, location and setup. Filter by year, month, week or day.
 - **Custom charts.** Turn your own questions into a chart, for example "How does Return to Value do in a balanced market?"
-- **Made to fit how you trade.** Edit all lists (locations, setups, evidence, targets, psychology) and your rules in Settings and switch sections on or off, so the journal matches the way you trade.
+- **Made to fit how you trade.** Edit all lists (locations, setups, evidence, targets, psychology) and your rules in Settings and switch sections on or off, so the journal matches the way you trade. Trade another system? Choose **Use your own system** in Settings > Journal to start from empty lists; the VWS lists are kept aside and come back with one click. **Reset to default** puts the default VWS lists and rules back.
 - **Dark and light mode**, keyboard shortcuts, and installable as a desktop app.
 
 ## Requirements
