@@ -1573,3 +1573,66 @@ a.gate-link { text-align: center; width: fit-content; }
     .rules-scope-box .rules-scope-chip { max-width: 100%; white-space: normal; text-align: left; }
     .rules-scope-box .rules-scope-chip .rules-chip-lock, .rules-scope-box .rules-scope-chip .rules-chip-count { flex: none; }
 }
+
+/* Setup rules behind two codes (core / premium) + "Get your VWS code" */
+.rules-code-link { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--accent); cursor: pointer; text-align: left; width: fit-content; }
+.rules-code-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+.rules-unlocked.is-inline { height: 22px; padding: 0 8px; font-size: 11px; margin-right: 4px; vertical-align: 1px; }
+.rules-unlocked.is-inline svg { width: 11px; height: 11px; }
+.rules-lock-card.is-tiered { flex-direction: column; align-items: stretch; gap: 12px; position: relative; }
+.rules-lock-main { display: flex; align-items: center; gap: 12px; }
+.rules-lock-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding-left: 46px; }
+.rules-sk { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--bg-input); border: 1px solid var(--border-color); filter: blur(0.6px); opacity: 0.8; }
+.rules-sk-row { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 10px; }
+.rules-sk-ph { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.rules-sk-bar { height: 8px; border-radius: 6px; background: color-mix(in srgb, var(--text-muted) 28%, transparent); }
+.rules-code-dialog { width: 600px; position: relative; gap: 16px; }
+.rules-code-close { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 8px; border: 0; background: transparent; color: var(--text-muted); font-size: 20px; line-height: 1; cursor: pointer; }
+.rules-code-close:hover { background: var(--bg-hover); }
+.rules-code-q { font-weight: 600; color: var(--text-main); white-space: nowrap; }
+.rules-tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rules-tier { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--group-bg); }
+.rules-tier.is-pick { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--bg-panel)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+.rules-tier-badge { position: absolute; top: -10px; right: 14px; height: 20px; padding: 0 8px; border-radius: 100px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; }
+.rules-tier-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.rules-tier-title { font-size: 15px; font-weight: 600; color: var(--text-main); }
+.rules-tier ul { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.rules-tier li { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.4; color: var(--text-main); }
+.rules-tier li svg { flex: none; margin-top: 2px; color: var(--success); width: 13px; height: 13px; }
+.rules-tier li.is-no { color: var(--text-muted); }
+.rules-tier-dash { width: 13px; flex: none; text-align: center; }
+.rules-tier-cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; height: 38px; box-sizing: border-box; border-radius: 100px; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+.rules-tier .rules-unlocked { align-self: flex-start; }
+.rules-code-flow { list-style: none; margin: 0; padding: 14px 0 0; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 14px; }
+.rules-code-flow > li { display: flex; gap: 12px; align-items: flex-start; }
+.rules-code-num { width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--bg-hover); color: var(--text-main); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+.rules-code-step { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; padding-top: 2px; }
+.rules-code-step strong { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.rules-code-step > span { font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+.rules-code-ctas { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.rules-code-ctas .rules-tier-cta { padding: 0 16px; }
+.rules-code-enter { display: flex; gap: 8px; margin-top: 8px; }
+.rules-code-enter .linear-input { flex: 1; height: 38px; box-sizing: border-box; }
+@media (max-width: 600px) {
+    .rules-code-dialog { padding: 20px; max-height: calc(100vh - 32px); overflow-y: auto; }
+    .rules-tiers { grid-template-columns: 1fr; gap: 16px; }
+    .rules-tier.is-pick { order: -1; }
+    .rules-lock-actions { padding-left: 0; }
+    .rules-code-ctas .rules-tier-cta { flex: 1 1 100%; }
+    .rules-unlock-input { min-width: 0; }
+    .rules-layout-row:not(.rules-unlock-row) { flex-direction: column; align-items: stretch; }
+}
+
+
+.rules-book { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; background: var(--group-bg); border: 1px solid var(--border-color); }
+.rules-book img { width: 56px; height: 84px; object-fit: cover; border-radius: 4px; flex: none; box-shadow: 0 6px 16px var(--shadow-md); }
+.rules-book-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.rules-book-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.rules-book-text strong { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.rules-book-text > span:last-child { font-size: 12px; color: var(--text-muted); }
+.rules-book .rules-tier-cta { flex: none; padding: 0 14px; }
+.faq-answer .rules-book { margin-top: 14px; max-width: 520px; }
+@media (max-width: 600px) { .rules-book { flex-wrap: wrap; } .rules-book .rules-tier-cta { flex: 1 1 100%; } }
+
+.rules-unlock-msg.is-ok { color: var(--success); }
+.faq-answer .faq-code-btn { margin-top: 12px; }

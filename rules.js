@@ -9,9 +9,13 @@
 //   settings.rules = { "_all": [{ id, phase, key, detail }], "<setup>": [...] }
 //   settings.features.rules = true | false
 //   trade.ruleChecks = [{ id, phase, key, detail, ok: true | false | null }]
-//   settings.advancedRules = { unlocked: true, defaults: { "<setup>": [[phase, key, detail]] } }
-//     (only after a valid code: the default rules for the advanced setups are not
-//     in this file, they come from api.vwsjournal.com/unlock)
+//   settings.setupRules = { tier: 'core' | 'all', version, defaults: { "<setup>": [[phase, key, detail]] } }
+//     (only after a valid code: the default rules for the setups are not in this
+//     file, they come from api.vwsjournal.com/unlock. The free code gives the core
+//     setups, the premium code core + advanced. Both are shared in the Discord of
+//     the Drysdale Trading Group.)
+//   settings.advancedRules = { unlocked: true, defaults } (older version of the above:
+//     counts as tier 'all', rules version 1)
 
 // ---------- Release switch ----------
 // false = rules are hidden for everyone and nothing is added to settings.json.
@@ -50,40 +54,30 @@ const RULE_PHASES = ['Context', 'Location', 'Entry', 'Risk'];
 const RULES_ALL = '_all';
 
 // Default rules: [phase, key, detail]. Key = what you scan, detail = a few words.
+// Only the rules for all setups are in the app; the setups' own default rules
+// come with a code (see below).
 const DEFAULT_RULES = {
     '_all': [
         ['Context', 'Market condition', 'clear before entry'],
         ['Location', 'Planned level', 'price came to it, no chasing'],
-        ['Risk', 'Stop & size', 'at invalidation, never widened']
-    ],
-    'Price Discovery Continuation': [
-        ['Context', 'Accepted outside value', 'time or distance'],
-        ['Context', 'VWAP sloping', 'in trade direction'],
-        ['Location', 'Pullback', 'to the band or breakout level'],
-        ['Entry', 'Strength', 'in trade direction']
-    ],
-    'Fade Value Area Extremes': [
-        ['Context', 'Balance', 'flat VWAP, rotating in value'],
-        ['Location', 'Edge of value', 'band, VAH/VAL or IB edge'],
-        ['Entry', 'Rejection', 'no acceptance outside']
-    ],
-    'Return to Value': [
-        ['Context', 'Prior acceptance', 'outside value'],
-        ['Context', 'Back inside', 'broke into value'],
-        ['Entry', 'Strength', 'toward VWAP or POC']
-    ],
-    'VWAP Bounce': [
-        ['Context', 'Trend day', 'discovery, sloped VWAP'],
-        ['Location', 'First pullback', 'to VWAP, IB mid or POC'],
-        ['Entry', 'Strength', 'away from VWAP']
+        ['Risk', 'Size & stop', 'size per plan, stop never widened']
     ]
 };
 
-// The advanced setups: their default rules unlock with a code. The code is
-// checked by api.vwsjournal.com, which then sends the rules. Neither the code
-// nor these rules are in the app. Rules people add themselves are never locked.
+// The setups whose default rules unlock with a code. The code is checked by
+// api.vwsjournal.com, which then sends the rules. Neither the codes nor these
+// rules are in the app. Rules people add themselves are never locked.
+const RULES_CORE = ['Price Discovery Continuation', 'Fade Value Area Extremes', 'Return to Value', 'VWAP Bounce'];
 const RULES_ADVANCED = ['Madonna', 'VWAP/POC Scalps in Balance', 'Late Entry Continuation', 'Inside HTF Balance Fades', 'IB Extension Fades'];
 const RULES_UNLOCK_API = 'https://api.vwsjournal.com/unlock'; // share-API Worker, route POST /unlock
+const RULES_DEFAULTS_VERSION = 2; // same as RULES_VERSION in the Worker
+// Where people find the codes: the Discord of the Drysdale Trading Group (no direct link)
+const RULES_DTG = {
+    name: 'Drysdale Trading Group',
+    youtube: 'https://www.youtube.com/@traderdrysdale',
+    book: 'https://a.co/d/0fJ6tEZ3',
+    bookCover: 'landing/drysdale-book.webp'
+};
 
 // ---------- Helpers ----------
 
@@ -137,40 +131,85 @@ function rulesBuildDefaults() {
     return out;
 }
 
-// Built-in defaults plus, once unlocked, the advanced setup defaults
+// Built-in defaults plus, once unlocked, the setup defaults from the server
 function rulesDefaultLists() {
     const out = { ...DEFAULT_RULES };
-    if (rulesAdvancedUnlocked()) {
-        const d = appData.settings.advancedRules.defaults;
-        Object.keys(d).forEach(name => { if (Array.isArray(d[name])) out[name] = d[name]; });
-    }
+    const d = rulesUnlockedDefaults();
+    Object.keys(d).forEach(name => { if (Array.isArray(d[name])) out[name] = d[name]; });
     return out;
 }
 
-// ---------- Advanced setup rules (unlock code) ----------
+// ---------- Setup rules (codes) ----------
+
+function rulesUnlockedDefaults() {
+    const sets = appData.settings || {};
+    const r = sets.setupRules;
+    if (rulesIsObject(r) && rulesIsObject(r.defaults)) return r.defaults;
+    const a = sets.advancedRules;
+    if (rulesIsObject(a) && a.unlocked === true && rulesIsObject(a.defaults)) return a.defaults;
+    return {};
+}
+
+// 'none' | 'core' | 'all'
+function rulesTier() {
+    const sets = appData.settings || {};
+    const r = sets.setupRules;
+    if (rulesIsObject(r) && (r.tier === 'core' || r.tier === 'all')) return r.tier;
+    const a = sets.advancedRules;
+    if (rulesIsObject(a) && a.unlocked === true && rulesIsObject(a.defaults)) return 'all';
+    return 'none';
+}
+
+function rulesTierRank(t) {
+    return t === 'all' ? 2 : t === 'core' ? 1 : 0;
+}
+
+// Version of the default rules this user got (older unlocks: 1)
+function rulesDefaultsVersion() {
+    const r = appData.settings && appData.settings.setupRules;
+    if (rulesIsObject(r) && r.tier) return Number(r.version) || 1;
+    return rulesTier() === 'none' ? 0 : 1;
+}
+
+function rulesDefaultsOutdated() {
+    return rulesTier() !== 'none' && rulesDefaultsVersion() < RULES_DEFAULTS_VERSION;
+}
 
 function rulesAdvancedUnlocked() {
-    const a = appData.settings && appData.settings.advancedRules;
-    return rulesIsObject(a) && a.unlocked === true && rulesIsObject(a.defaults);
+    return rulesTier() === 'all';
+}
+
+function rulesNameIn(list, name) {
+    const n = String(name || '').trim().toLowerCase();
+    return !!n && list.some(a => a.toLowerCase() === n);
+}
+
+function rulesIsCoreSetup(name) {
+    return rulesNameIn(RULES_CORE, name);
 }
 
 function rulesIsAdvancedSetup(name) {
-    const n = String(name || '').trim().toLowerCase();
-    return !!n && RULES_ADVANCED.some(a => a.toLowerCase() === n);
+    return rulesNameIn(RULES_ADVANCED, name);
 }
 
-// A setup whose default rules still need the code
-function rulesAdvancedLocked(name) {
-    return rulesIsAdvancedSetup(name) && !rulesAdvancedUnlocked();
+// A setup whose default rules still need a code
+function rulesSetupLocked(name) {
+    const t = rulesTier();
+    if (rulesIsAdvancedSetup(name)) return t !== 'all';
+    if (rulesIsCoreSetup(name)) return t === 'none';
+    return false;
 }
 
-// Without the code, the default rules of the advanced setups are taken out of
-// settings.json (rules people added themselves have other ids and stay).
+// Without the right code, the default rules of the locked setups are taken out
+// of settings.json (rules people added themselves have other ids and stay).
 // Trades keep their own copy of the rules they were rated on.
-function rulesRemoveAdvancedDefaults() {
+function rulesRemoveLockedDefaults() {
     const rules = appData.settings.rules;
     if (!rulesIsObject(rules)) return;
-    const prefixes = RULES_ADVANCED.map(n => `d-${rulesSlug(n)}-`);
+    const t = rulesTier();
+    const names = t === 'all' ? [] : t === 'core' ? RULES_ADVANCED : [...RULES_CORE, ...RULES_ADVANCED];
+    if (!names.length) return;
+    const prefixes = names.map(n => `d-${rulesSlug(n)}-`);
     Object.keys(rules).forEach(k => {
         if (!Array.isArray(rules[k])) return;
         rules[k] = rules[k].filter(r => !(r && typeof r.id === 'string' && prefixes.some(p => r.id.startsWith(p))));
@@ -178,22 +217,22 @@ function rulesRemoveAdvancedDefaults() {
 }
 
 // Only keeps what we expect from the server: known setups, [phase, key, detail]
-function rulesCleanAdvancedDefaults(raw) {
-    if (!rulesIsObject(raw)) return null;
+function rulesCleanServerRules(raw, names) {
+    if (!rulesIsObject(raw)) return {};
     const out = {};
     Object.keys(raw).forEach(name => {
-        const canon = RULES_ADVANCED.find(a => a.toLowerCase() === String(name).trim().toLowerCase());
+        const canon = names.find(a => a.toLowerCase() === String(name).trim().toLowerCase());
         if (!canon || !Array.isArray(raw[name])) return;
         const list = raw[name].map(r => Array.isArray(r) ? r : (r && typeof r === 'object' ? [r.phase, r.key, r.detail] : null))
             .filter(r => r && RULE_PHASES.includes(r[0]) && typeof r[1] === 'string' && r[1].trim())
             .map(([phase, key, detail]) => [phase, key.trim().slice(0, 40), String(detail || '').trim().slice(0, 60)]);
         if (list.length) out[canon] = list;
     });
-    return Object.keys(out).length ? out : null;
+    return out;
 }
 
 // Asks api.vwsjournal.com to check the code. Only the code is sent.
-// Result: { status: 'ok', defaults } | { status: 'invalid' } | { status: 'limit' } | { status: 'network' }
+// Result: { status: 'ok', tier, version, defaults, previous } | { status: 'invalid' | 'limit' | 'network' }
 async function rulesUnlockRequest(code) {
     const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
     const timer = ctrl ? setTimeout(() => ctrl.abort(), 12000) : null;
@@ -208,8 +247,16 @@ async function rulesUnlockRequest(code) {
         if (res.status === 429) return { status: 'limit' };
         if (!res.ok) return { status: 'network' };
         const data = await res.json();
-        const defaults = rulesCleanAdvancedDefaults(data && data.rules);
-        return defaults ? { status: 'ok', defaults } : { status: 'network' };
+        const tier = data && (data.tier === 'core' || data.tier === 'all') ? data.tier : null;
+        if (!tier) return { status: 'network' };
+        const names = tier === 'all' ? [...RULES_CORE, ...RULES_ADVANCED] : RULES_CORE;
+        const defaults = rulesCleanServerRules(data.rules, names);
+        if (!Object.keys(defaults).length) return { status: 'network' };
+        return {
+            status: 'ok', tier, defaults,
+            version: Number(data.version) || RULES_DEFAULTS_VERSION,
+            previous: rulesCleanServerRules(data.previous, names)
+        };
     } catch (e) {
         return { status: 'network' };
     } finally {
@@ -217,37 +264,51 @@ async function rulesUnlockRequest(code) {
     }
 }
 
-// Adds the advanced setup defaults to the setups this user has (once) and saves
-async function rulesApplyAdvancedUnlock(defaults) {
+// Adds the setup defaults to the setups this user has and saves. Older default
+// rules the user never edited (same id and text as before) are replaced by the
+// new ones; edited rules and own rules stay.
+async function rulesApplyUnlock(r) {
     const sets = appData.settings;
-    sets.advancedRules = { unlocked: true, defaults };
+    sets.setupRules = { tier: r.tier, version: r.version, defaults: r.defaults };
+    delete sets.advancedRules;
     rulesEnsureShape();
     const own = rulesSetupNames();
-    Object.keys(defaults).forEach(name => {
+    Object.keys(r.defaults).forEach(name => {
         const target = own.find(s => s.trim().toLowerCase() === name.toLowerCase());
         if (!target) return;
         const key = rulesScopeKey(target) || target;
-        const arr = Array.isArray(sets.rules[key]) ? sets.rules[key] : [];
-        const add = defaults[name]
-            .map(([phase, k, detail]) => ({ id: `d-${rulesSlug(name)}-${rulesSlug(k)}`, phase, key: k, detail }))
-            .filter(r => !arr.some(x => x.id === r.id));
+        const prefix = `d-${rulesSlug(name)}-`;
+        const old = (r.previous && r.previous[name]) || [];
+        const unedited = (x) => x && typeof x.id === 'string' && x.id.startsWith(prefix) &&
+            old.some(([phase, k, detail]) => x.id === prefix + rulesSlug(k) && x.phase === phase && x.key === k && x.detail === detail);
+        const arr = (Array.isArray(sets.rules[key]) ? sets.rules[key] : []).filter(x => !unedited(x));
+        const add = r.defaults[name]
+            .map(([phase, k, detail]) => ({ id: prefix + rulesSlug(k), phase, key: k, detail }))
+            .filter(x => !arr.some(y => y.id === x.id));
         sets.rules[key] = [...add, ...arr];
     });
+    rulesRemoveLockedDefaults();
     if (typeof autoSave === 'function') await autoSave();
 }
 
 // Runs the check and returns the status; on success the rules are added and saved
+// 'ok-core' | 'ok-all' | 'ok-update' | 'same' | 'empty' | 'invalid' | 'limit' | 'network'
 async function rulesTryUnlock(code) {
     const c = String(code || '').trim();
     if (!c) return 'empty';
     const r = await rulesUnlockRequest(c);
     if (r.status !== 'ok') return r.status;
-    await rulesApplyAdvancedUnlock(r.defaults);
-    return 'ok';
+    const before = rulesTier();
+    const higher = rulesTierRank(r.tier) > rulesTierRank(before);
+    const update = r.tier === before && rulesDefaultsVersion() < r.version;
+    if (!higher && !update) return 'same';
+    await rulesApplyUnlock(r);
+    return higher ? `ok-${r.tier}` : 'ok-update';
 }
 
 const RULES_UNLOCK_MSG = {
     empty: ['is-error', 'Enter your code first.'],
+    same: ['is-ok', 'You already have these rules.'],
     invalid: ['is-error', 'That code doesn’t work. Check the spelling and try again.'],
     limit: ['is-warn', 'Too many tries. Wait an hour and try again.'],
     network: ['is-warn', 'Couldn’t check the code. Check your connection and try again.']
@@ -266,8 +327,9 @@ async function rulesRunUnlock(input, button, msg, label) {
     input.disabled = false;
     button.disabled = false;
     button.textContent = label;
-    if (status === 'ok') {
-        showToast('Advanced setup rules unlocked', 'success');
+    const done = { 'ok-core': 'Core setup rules unlocked', 'ok-all': 'All setup rules unlocked', 'ok-update': 'Setup rules updated' };
+    if (done[status]) {
+        showToast(done[status], 'success');
         return true;
     }
     const [cls, text] = RULES_UNLOCK_MSG[status] || RULES_UNLOCK_MSG.network;
@@ -289,12 +351,13 @@ function rulesOpenUnlockDialog() {
         <div class="app-dialog" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title" aria-describedby="app-dialog-text">
             <span class="app-dialog-icon is-neutral">${RULES_ICON_LOCK.replace('width="12" height="12"', 'width="18" height="18"')}</span>
             <div class="app-dialog-copy">
-                <h2 id="app-dialog-title">Unlock advanced setup rules</h2>
-                <p id="app-dialog-text">Enter your code to add the default rules for the ${RULES_ADVANCED.length} advanced setups. Rules you made yourself stay as they are.</p>
+                <h2 id="app-dialog-title">Unlock setup rules</h2>
+                <p id="app-dialog-text">Enter your VWS code. The codes are shared in the Discord of the ${RULES_DTG.name}: free members get the core setups, premium members core and advanced.</p>
                 <div class="rules-unlock-field">
                     <input type="text" class="linear-input" placeholder="Enter code" aria-label="Code" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60">
                     <span class="rules-unlock-msg" role="status"></span>
                 </div>
+                <button type="button" class="rules-code-link" data-dialog="where">Where do I find my code?</button>
             </div>
             <div class="app-dialog-actions">
                 <button type="button" class="btn-secondary" data-dialog="cancel">Cancel</button>
@@ -339,6 +402,7 @@ function rulesOpenUnlockDialog() {
     };
     overlay.addEventListener('mousedown', e => { if (e.target === overlay && !busy) close(); });
     overlay.querySelector('[data-dialog="cancel"]').addEventListener('click', () => { if (!busy) close(); });
+    overlay.querySelector('[data-dialog="where"]').addEventListener('click', () => { if (!busy) { close(); rulesOpenCodeInfoDialog(); } });
     ok.addEventListener('click', submit);
     document.addEventListener('keydown', onKey, true);
     document.body.appendChild(overlay);
@@ -347,31 +411,54 @@ function rulesOpenUnlockDialog() {
 
 // Small card under the rules in Add Trade when the setup's defaults are locked
 function rulesLockCardHtml(setup) {
+    const adv = rulesIsAdvancedSetup(setup);
+    const core = rulesTier() === 'core';
+    const title = adv ? `${escapeHTML(setup)} is an advanced setup` : `${escapeHTML(setup)} has default rules`;
+    const text = adv
+        ? (core ? 'Its rules come with the premium code. Your core setups are already unlocked.' : `Its rules come with the premium code of the ${RULES_DTG.name}.`)
+        : `Free members of the ${RULES_DTG.name} get the code. Rules you add yourself always show here.`;
+    const sk = ['Context', 'Location', 'Entry'].map((ph, i) => `<span class="rules-sk-row"><span class="rules-sk-ph">${ph}</span><span class="rules-sk-bar" style="width:${[62, 48, 56][i]}%"></span></span>`).join('');
     return `
-        <div class="rules-lock-card">
-            <span class="rules-lock-icon">${RULES_ICON_LOCK.replace('width="12" height="12"', 'width="16" height="16"')}</span>
-            <span class="rules-lock-text"><strong>${escapeHTML(setup)} has default rules too</strong><span>They unlock with a code. Rules you add yourself always show here.</span></span>
-            <button type="button" class="btn-secondary btn-sm" data-rules-act="unlock">Enter code</button>
+        <div class="rules-lock-card is-tiered">
+            <div class="rules-sk" aria-hidden="true">${sk}</div>
+            <div class="rules-lock-main">
+                <span class="rules-lock-icon">${RULES_ICON_LOCK.replace('width="12" height="12"', 'width="16" height="16"')}</span>
+                <span class="rules-lock-text"><strong>${title}</strong><span>${text}</span></span>
+            </div>
+            <div class="rules-lock-actions">
+                <button type="button" class="btn-primary btn-sm" data-rules-act="unlock">Enter code</button>
+                <button type="button" class="rules-code-link" data-rules-act="getcode">${adv ? 'Where do I find the premium code?' : 'Where do I find a code?'}</button>
+            </div>
         </div>`;
 }
 
-// Settings > Rules: the code row (or the "Unlocked" badge)
+// Settings > Rules: the code row (or the "All unlocked" badge)
 function rulesUnlockRowEl() {
     const row = document.createElement('div');
     row.className = 'rules-layout-row rules-unlock-row';
-    if (rulesAdvancedUnlocked()) {
-        row.innerHTML = `<div class="rules-layout-text"><span class="rules-layout-title">Advanced setup rules</span><span class="rules-layout-note">Unlocked. The default rules for the ${RULES_ADVANCED.length} advanced setups are in your list.</span></div><span class="rules-unlocked">${RULES_ICON_CHECK}Unlocked</span>`;
+    const t = rulesTier();
+    const outdated = rulesDefaultsOutdated();
+    if (t === 'all' && !outdated) {
+        row.innerHTML = `<div class="rules-layout-text"><span class="rules-layout-title">Setup rules</span><span class="rules-layout-note">The default rules for the ${RULES_CORE.length} core and ${RULES_ADVANCED.length} advanced setups are in your list.</span></div><span class="rules-unlocked">${RULES_ICON_CHECK}All unlocked</span>`;
         return row;
     }
+    const chip = (label) => `<span class="rules-unlocked is-inline">${RULES_ICON_CHECK}${label}</span>`;
+    let note;
+    if (t === 'none') note = 'Enter your VWS code to add the default rules for your setups.';
+    else if (t === 'core') note = `${chip('Core unlocked')} The premium code adds the ${RULES_ADVANCED.length} advanced setups.${outdated ? ' New default rules are available: enter your code again to get them.' : ''}`;
+    else note = `${chip('All unlocked')} New default rules are available: enter your code again to get them.`;
+    const link = t === 'core' ? 'Where do I find the premium code?' : 'Where do I find a code?';
+    const placeholder = t === 'core' && !outdated ? 'Premium code' : 'Enter code';
     row.innerHTML = `
-        <div class="rules-layout-text"><span class="rules-layout-title">Advanced setup rules</span><span class="rules-layout-note">Have a code? It adds the default rules for the ${RULES_ADVANCED.length} advanced setups.</span><span class="rules-unlock-msg" role="status"></span></div>
+        <div class="rules-layout-text"><span class="rules-layout-title">Setup rules</span><span class="rules-layout-note">${note}</span><button type="button" class="rules-code-link">${link}</button><span class="rules-unlock-msg" role="status"></span></div>
         <div class="rules-unlock-form">
-            <input type="text" class="linear-input rules-unlock-input" placeholder="Enter code" aria-label="Code for the advanced setup rules" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60">
+            <input type="text" class="linear-input rules-unlock-input" placeholder="${placeholder}" aria-label="Code for the setup rules" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60">
             <button type="button" class="btn-primary btn-sm rules-unlock-btn">Unlock</button>
         </div>`;
     const input = row.querySelector('input');
-    const btn = row.querySelector('button');
+    const btn = row.querySelector('.rules-unlock-btn');
     const msg = row.querySelector('.rules-unlock-msg');
+    row.querySelector('.rules-code-link').onclick = () => rulesOpenCodeInfoDialog();
     let busy = false;
     const submit = async () => {
         if (busy) return;
@@ -384,6 +471,121 @@ function rulesUnlockRowEl() {
     input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
     return row;
 }
+
+const RULES_ICON_KEY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"></circle><path d="M10.7 12.3 21 2"></path><path d="m16 7 3 3"></path><path d="m19 4 2 2"></path></svg>';
+const RULES_ICON_PLAY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4"></rect><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"></polygon></svg>';
+const RULES_ICON_EXT = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></svg>';
+
+// Small card with Chris Drysdale's book (cover only, the title is not written out)
+function rulesBookCardHtml() {
+    return `
+        <div class="rules-book">
+            <img src="${RULES_DTG.bookCover}" width="56" height="84" alt="Book cover" loading="lazy">
+            <div class="rules-book-text">
+                <span class="rules-book-kicker">Learn the setups</span>
+                <strong>The book by Chris Drysdale</strong>
+                <span>Paperback and Kindle on Amazon.</span>
+            </div>
+            <a class="btn-secondary btn-sm rules-tier-cta" href="${RULES_DTG.book}" target="_blank" rel="noopener">View on Amazon ${RULES_ICON_EXT}</a>
+        </div>`;
+}
+
+// "Get your VWS code": where the codes are (Discord of the Drysdale Trading Group)
+function rulesOpenCodeInfoDialog() {
+    if (document.getElementById('app-dialog')) return;
+    const previousFocus = document.activeElement;
+    const coreDone = rulesTier() !== 'none';
+    const yes = (txt) => `<li>${RULES_ICON_CHECK}<span>${txt}</span></li>`;
+    const no = (txt) => `<li class="is-no"><span class="rules-tier-dash">–</span><span>${txt}</span></li>`;
+    const overlay = document.createElement('div');
+    overlay.id = 'app-dialog';
+    overlay.className = 'app-dialog-overlay';
+    overlay.innerHTML = `
+        <div class="app-dialog rules-code-dialog" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title">
+            <button type="button" class="rules-code-close" data-dialog="cancel" aria-label="Close">&times;</button>
+            <span class="app-dialog-icon is-primary">${RULES_ICON_KEY}</span>
+            <div class="app-dialog-copy">
+                <h2 id="app-dialog-title">Get your VWS code</h2>
+                <p>The default rules for the setups come with a code from the <strong>${RULES_DTG.name}</strong>. The codes are shared in the group’s <strong>Discord</strong>: join as a free or premium member and search there for <span class="rules-code-q">VWS code</span>.</p>
+            </div>
+            <div class="rules-tiers">
+                <div class="rules-tier">
+                    <span class="rules-tier-kicker">Free member</span>
+                    <strong class="rules-tier-title">Core setups</strong>
+                    <ul>${yes(`Rules for the ${RULES_CORE.length} core setups`)}${no(`Rules for the ${RULES_ADVANCED.length} advanced setups`)}</ul>
+                    ${coreDone ? `<span class="rules-unlocked">${RULES_ICON_CHECK}Unlocked</span>` : ''}
+                </div>
+                <div class="rules-tier is-pick">
+                    <span class="rules-tier-badge">Most complete</span>
+                    <span class="rules-tier-kicker">Premium member</span>
+                    <strong class="rules-tier-title">Core + advanced setups</strong>
+                    <ul>${yes(`Rules for the ${RULES_CORE.length} core setups`)}${yes(`Rules for the ${RULES_ADVANCED.length} advanced setups`)}</ul>
+                    ${rulesTier() === 'all' ? `<span class="rules-unlocked">${RULES_ICON_CHECK}Unlocked</span>` : ''}
+                </div>
+            </div>
+            <ol class="rules-code-flow">
+                <li><span class="rules-code-num">1</span><div class="rules-code-step"><strong>Join the ${RULES_DTG.name}</strong><span>As a free or premium member. Chris Drysdale’s YouTube channel shows the way in.</span>
+                    <div class="rules-code-ctas">
+                        <a class="btn-primary btn-sm rules-tier-cta" href="${RULES_DTG.youtube}" target="_blank" rel="noopener">${RULES_ICON_PLAY}YouTube channel ${RULES_ICON_EXT}</a>
+                    </div></div></li>
+                <li><span class="rules-code-num">2</span><div class="rules-code-step"><strong>Search for “VWS code” in the Discord</strong><span>The codes are shared there: free members find the core code, premium members the code for core and advanced.</span></div></li>
+                <li><span class="rules-code-num">3</span><div class="rules-code-step"><strong>Enter the code here</strong>
+                    <div class="rules-code-enter">
+                        <input type="text" class="linear-input" placeholder="Enter code" aria-label="Code" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60">
+                        <button type="button" class="btn-primary rules-unlock-btn" data-dialog="ok">Unlock</button>
+                    </div>
+                    <span class="rules-unlock-msg" role="status"></span></div></li>
+            </ol>
+            ${rulesBookCardHtml()}
+        </div>`;
+    const input = overlay.querySelector('input');
+    const ok = overlay.querySelector('[data-dialog="ok"]');
+    const msg = overlay.querySelector('.rules-unlock-msg');
+    let busy = false;
+    const close = () => {
+        document.removeEventListener('keydown', onKey, true);
+        overlay.remove();
+        if (previousFocus && typeof previousFocus.focus === 'function' && document.contains(previousFocus)) {
+            try { previousFocus.focus({ preventScroll: true }); } catch (e) {}
+        }
+    };
+    const submit = async () => {
+        if (busy) return;
+        busy = true;
+        const done = await rulesRunUnlock(input, ok, msg, 'Unlock');
+        busy = false;
+        if (!done) return;
+        close();
+        if (typeof tfMarkDirty === 'function') rulesFormSync();
+        const settingsView = document.getElementById('view-settings');
+        if (settingsView && settingsView.classList.contains('active') && typeof renderSettingsUI === 'function') renderSettingsUI();
+    };
+    // Captures keys while open, so the app's shortcuts don't fire; typing still works
+    const onKey = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Escape') { e.preventDefault(); if (!busy) close(); return; }
+        if (e.key === 'Enter' && document.activeElement === input) { e.preventDefault(); submit(); return; }
+        if (e.key === 'Tab') {
+            const items = [...overlay.querySelectorAll('button, a[href], input')].filter(el => !el.disabled);
+            const i = items.indexOf(document.activeElement);
+            e.preventDefault();
+            items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
+            return;
+        }
+        if (e.altKey || e.ctrlKey || e.metaKey) { if (!['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase())) e.preventDefault(); }
+    };
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay && !busy) close(); });
+    overlay.querySelector('[data-dialog="cancel"]').addEventListener('click', () => { if (!busy) close(); });
+    ok.addEventListener('click', submit);
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(overlay);
+    input.focus();
+}
+
+// Help: the button in the FAQ about the setup rules
+document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('[data-open-code-info]')) rulesOpenCodeInfoDialog();
+});
 
 // Repairs a hand-edited or older rules object
 function rulesEnsureShape() {
@@ -416,7 +618,14 @@ function rulesMigrate() {
     if (!sets.features || typeof sets.features !== 'object') sets.features = {};
     if (typeof sets.features.rules !== 'boolean') sets.features.rules = true;
     rulesEnsureShape();
-    if (!rulesAdvancedUnlocked()) rulesRemoveAdvancedDefaults();
+    // Rules for all setups, version 2: "Stop & size" became "Size & stop" (only when not edited)
+    if (!sets.migrations.allRulesV2) {
+        const all = sets.rules[RULES_ALL];
+        const i = all.findIndex(r => r.id === 'd-all-stop-size' && r.phase === 'Risk' && r.key === 'Stop & size' && r.detail === 'at invalidation, never widened');
+        if (i >= 0 && !all.some(r => r.id === 'd-all-size-stop')) all[i] = { id: 'd-all-size-stop', phase: 'Risk', key: 'Size & stop', detail: 'size per plan, stop never widened' };
+        sets.migrations.allRulesV2 = true;
+    }
+    rulesRemoveLockedDefaults();
 }
 
 // The list that holds a setup's own rules (exact name first, then case-insensitive)
@@ -716,7 +925,7 @@ function rulesRenderPanel() {
     }
 
     const list = rulesFormList();
-    const lock = rulesAdvancedLocked(st.setup) ? rulesLockCardHtml(st.setup) : '';
+    const lock = rulesSetupLocked(st.setup) ? rulesLockCardHtml(st.setup) : '';
     if (!list.length) {
         html += lock || `
             <div class="rules-empty">
@@ -793,7 +1002,7 @@ function rulesRenderInline(panel) {
         return;
     }
     const list = rulesFormList();
-    const lock = rulesAdvancedLocked(st.setup) ? rulesLockCardHtml(st.setup) : '';
+    const lock = rulesSetupLocked(st.setup) ? rulesLockCardHtml(st.setup) : '';
     if (!list.length) {
         panel.innerHTML = `<div class="rules-head"><span class="rules-label">${label}</span></div>${lock || '<div class="rules-inline-note">No rules for this setup yet. Add them in Settings &gt; Rules.</div>'}`;
         return;
@@ -815,6 +1024,7 @@ function rulesPanelClick(e) {
     if (act === 'enlarge') { openImageViewer(el.src); return; }
     if (act === 'open') { rulesForm.open = true; rulesRenderPanel(); return; }
     if (act === 'unlock') { rulesOpenUnlockDialog(); return; }
+    if (act === 'getcode') { rulesOpenCodeInfoDialog(); return; }
     const list = rulesFormList();
     if (act === 'all') {
         list.forEach(r => { rulesForm.checks[r.id] = true; });
@@ -963,7 +1173,7 @@ function renderRulesSettings(container, onChange) {
         b.type = 'button';
         b.className = 'chip rules-scope-chip' + (s === scope ? ' is-selected' : '');
         b.setAttribute('aria-pressed', s === scope ? 'true' : 'false');
-        const lock = s !== RULES_ALL && rulesAdvancedLocked(s) ? `<span class="rules-chip-lock" title="Default rules unlock with a code">${RULES_ICON_LOCK}</span>` : '';
+        const lock = s !== RULES_ALL && rulesSetupLocked(s) ? `<span class="rules-chip-lock" title="Default rules unlock with a code">${RULES_ICON_LOCK}</span>` : '';
         b.innerHTML = `${lock}<span class="rules-scope-name">${escapeHTML(s === RULES_ALL ? 'All setups' : s)}</span><span class="rules-chip-count">${count}</span>`;
         b.onclick = () => { rulesSettingsScope = s; renderSettingsUI(); };
         return b;
@@ -976,7 +1186,7 @@ function renderRulesSettings(container, onChange) {
         const list = (Array.isArray(cfg[cat]) ? cfg[cat] : []).map(x => String(x))
             .filter(x => setups.includes(x) && !seen.has(x));
         list.forEach(x => seen.add(x));
-        if (list.length) groups.push({ label: cat, setups: list, locked: list.every(x => rulesAdvancedLocked(x)) });
+        if (list.length) groups.push({ label: cat, setups: list, locked: list.every(x => rulesSetupLocked(x)) });
     });
     const box = document.createElement('div');
     box.className = 'rules-scope-box';
@@ -997,8 +1207,8 @@ function renderRulesSettings(container, onChange) {
     note.className = 'rules-scope-note';
     note.textContent = scope === RULES_ALL
         ? 'These rules are checked on every trade, whatever the setup.'
-        : rulesAdvancedLocked(scope)
-            ? `${scope} has default rules too: they unlock with a code. You can always add your own rules.`
+        : rulesSetupLocked(scope)
+            ? `${scope} has default rules too: they unlock with ${rulesIsAdvancedSetup(scope) ? 'the premium code' : 'a free code'} from the ${RULES_DTG.name}. You can always add your own rules.`
             : `Shown together with the rules for all setups when you pick ${scope}. Setups come from the Setup list on the Journal tab.`;
     scopeWrap.appendChild(note);
     card.appendChild(scopeWrap);
