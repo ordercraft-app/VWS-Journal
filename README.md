@@ -97,6 +97,8 @@ The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHu
 | `settings.json` | Default settings |
 | `vendor/` | Chart.js 4.5.1 and Flatpickr 4.6.13, stored in the repo at a fixed version |
 
+The script and style links in `index.html` (and `review/index.html`) end in `?v=…`. That number goes up with every update, so browsers load the new files at once instead of mixing cached old files with new ones.
+
 ## Support
 
 Questions, ideas or a bug? Mail **hello.ordercraft@gmail.com**.

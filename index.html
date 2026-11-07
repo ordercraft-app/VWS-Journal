@@ -52,8 +52,8 @@
         "creator": { "@type": "Organization", "name": "Order Craft", "url": "https://marketplace.elgato.com/@ordercraft" }
     }
     </script>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="styles.css?v=2026-11-07b">
+    <link rel="stylesheet" href="landing.css?v=2026-11-07b">
     <script>
         // Returning users: hide the welcome page before the first paint (gate.js decides for real)
         try { if (localStorage.getItem('vws-has-journal') === '1') document.documentElement.classList.add('has-journal'); } catch (e) {}
@@ -369,7 +369,7 @@
                         <span class="title-main">Journal</span>
                     </div>
                     <div class="header-divider"></div>
-                    <input type="date" id="date-picker" class="linear-input" style="width: auto;">
+                    <input type="date" id="date-picker" class="linear-input" style="width: auto;" aria-label="Date">
                     <button class="btn-secondary" id="btn-today">Today</button>
                     <button type="button" class="journal-status" id="journal-status" hidden></button>
                 </div>
@@ -394,13 +394,13 @@
                     <div id="share-active-banner" class="info-banner share-banner" hidden></div>
                     <!-- Weekly Calendar Widget -->
                     <div class="weekly-calendar-widget" id="weekly-calendar-widget">
-                        <button class="btn-icon cal-nav-btn" id="cal-prev-week">
+                        <button class="btn-icon cal-nav-btn" id="cal-prev-week" aria-label="Previous week" title="Previous week">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
                         <div class="cal-days-container" id="cal-days-container">
                             <!-- Days injected via JS -->
                         </div>
-                        <button class="btn-icon cal-nav-btn" id="cal-next-week">
+                        <button class="btn-icon cal-nav-btn" id="cal-next-week" aria-label="Next week" title="Next week">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </button>
                     </div>
@@ -459,25 +459,25 @@
                     </header>
 
                     <div class="stats-filters">
-                        <select id="filter-year" class="pill-select"></select>
-                        <select id="filter-month" class="pill-select"></select>
-                        <select id="filter-week" class="pill-select"></select>
-                        <select id="filter-day" class="pill-select"></select>
+                        <select id="filter-year" class="pill-select" aria-label="Year"></select>
+                        <select id="filter-month" class="pill-select" aria-label="Month"></select>
+                        <select id="filter-week" class="pill-select" aria-label="Week"></select>
+                        <select id="filter-day" class="pill-select" aria-label="Day"></select>
                         <button type="button" id="btn-stats-add-chart" class="btn-secondary btn-sm stats-add-chart">Add Custom Chart</button>
                     </div>
 
                     <!-- Top KPI Cards -->
                     <div class="kpi-grid">
                         <div class="stat-card kpi-card">
-                            <h3>Total Trades</h3>
+                            <h2>Total Trades</h2>
                             <div id="kpi-total" class="kpi-value">0</div>
                         </div>
                         <div class="stat-card kpi-card">
-                            <h3>Win Rate</h3>
+                            <h2>Win Rate</h2>
                             <div id="kpi-winrate" class="kpi-value">0%</div>
                         </div>
                         <div class="stat-card kpi-card">
-                            <h3>Profit Factor</h3>
+                            <h2>Profit Factor</h2>
                             <div id="kpi-ratio" class="kpi-value">0.0</div>
                         </div>
                     </div>
@@ -876,7 +876,7 @@
 
     <!-- Trade Modal (Popup) -->
     <div class="modal-overlay" id="trade-modal">
-        <div class="modal-content linear-modal">
+        <div class="modal-content linear-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div class="modal-header">
                 <h2 id="modal-title">Add Trade</h2>
                 <button class="close-btn" id="btn-close-modal" aria-label="Close">&times;</button>
@@ -994,22 +994,23 @@
         <img id="enlarged-image" src="" alt="Enlarged view">
     </div>
 
-    <script defer src="globals.js"></script>
-    <script defer src="storage.js"></script>
-    <script defer src="ui.js"></script>
-    <script defer src="ui-settings.js"></script>
-    <script defer src="tradeform.js"></script>
-    <script defer src="share.js"></script>
-    <script defer src="customcharts.js"></script>
-    <script defer src="gate.js"></script>
-    <script defer src="charts.js"></script>
-    <script defer src="rules.js"></script>
-    <script defer src="rules-settings.js"></script>
-    <script defer src="rules-stats.js"></script>
-    <script defer src="system.js"></script>
-    <script defer src="backup.js"></script>
-    <script defer src="releases.js"></script>
-    <script defer src="app.js"></script>
+    <!-- ?v=: raised with every update, so browsers load the new files instead of a cached mix -->
+    <script defer src="globals.js?v=2026-11-07b"></script>
+    <script defer src="storage.js?v=2026-11-07b"></script>
+    <script defer src="ui.js?v=2026-11-07b"></script>
+    <script defer src="ui-settings.js?v=2026-11-07b"></script>
+    <script defer src="tradeform.js?v=2026-11-07b"></script>
+    <script defer src="share.js?v=2026-11-07b"></script>
+    <script defer src="customcharts.js?v=2026-11-07b"></script>
+    <script defer src="gate.js?v=2026-11-07b"></script>
+    <script defer src="charts.js?v=2026-11-07b"></script>
+    <script defer src="rules.js?v=2026-11-07b"></script>
+    <script defer src="rules-settings.js?v=2026-11-07b"></script>
+    <script defer src="rules-stats.js?v=2026-11-07b"></script>
+    <script defer src="system.js?v=2026-11-07b"></script>
+    <script defer src="backup.js?v=2026-11-07b"></script>
+    <script defer src="releases.js?v=2026-11-07b"></script>
+    <script defer src="app.js?v=2026-11-07b"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>
     <!-- End Cloudflare Web Analytics -->

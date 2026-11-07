@@ -32,7 +32,7 @@
     --text-main: #EEEEEE;
     --text-muted: #888888;
     --accent: #386af5;
-    --accent-hover: #4071f7;
+    --accent-hover: #2f62ec; /* a11y: white text 5.2:1 on hover (was #4071f7, 4.3:1) */
     --danger: #ee354e;
     --success: #44BD1E;
     --color-win: #44BD1E;
@@ -42,7 +42,7 @@
     /* Calendar widget specific */
     --cal-bg-default: #1d1e21;
     --cal-bg-active: #2b2c30;
-    --cal-text-dim: #6E727A;
+    --cal-text-dim: #888888; /* a11y: 5.1:1 on the calendar (was #6E727A, 3.8:1) */
     
     /* Interactive states */
     --bg-hover: #2A2B30;
@@ -68,11 +68,11 @@
     --bg-input: #FFFFFF;
     --border-color: #E2E4E9;
     --text-main: #141517;
-    --text-muted: #6E727A;
+    --text-muted: #5C6068; /* a11y: 5.3:1 on the light background (was #6E727A, 4.1:1) */
     
     --cal-bg-default: #FFFFFF;
     --cal-bg-active: #EBECEF;
-    --cal-text-dim: #888888;
+    --cal-text-dim: #62666E; /* a11y: 5.8:1 on white (was #888888, 3.5:1) */
     
     --bg-hover: #EBECEF;
     --bg-disabled: #E2E4E9;
@@ -429,6 +429,10 @@ select.linear-input {
 .badge.win { background: var(--bg-win) !important; color: var(--color-win) !important; }
 .badge.lost { background: rgba(238, 53, 78, 0.15) !important; color: #ee354e !important; }
 .badge.be { background: rgba(136, 136, 136, 0.15); color: var(--text-muted); }
+/* a11y: darker text on the light badges (4.5:1 or more) */
+[data-theme="light"] .badge.win { color: #22700c !important; }
+[data-theme="light"] .badge.lost { color: #c0142f !important; }
+[data-theme="light"] .rules-unlocked { color: #22700c; }
 
 /* Multi-confluence UI for Cards */
 .multi-item { display: flex; flex-direction: column; gap: 4px; }
@@ -526,7 +530,7 @@ select.linear-input {
 .stat-card { background-color: var(--bg-panel); border: none; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: flex-start; min-height: 250px; }
 .stat-card.chart-span-2 { grid-column: span 2; }
 .kpi-card { min-height: auto; align-items: center; text-align: center; justify-content: center; padding: 16px 8px; }
-.kpi-card h3 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 500; }
+.kpi-card h2, .kpi-card h3 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 500; }
 .kpi-value { font-size: 32px; font-weight: 600; color: var(--text-main); }
 
 .stat-card.chart-span-3 { grid-column: span 3; }
@@ -559,7 +563,7 @@ select.linear-input {
 }
 
 .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
-@media (max-width: 800px) { .kpi-grid { gap: 8px; } .kpi-value { font-size: 22px; } .kpi-card h3 { font-size: 10px; } }
+@media (max-width: 800px) { .kpi-grid { gap: 8px; } .kpi-value { font-size: 22px; } .kpi-card h2, .kpi-card h3 { font-size: 10px; } }
 
 .chart-wrapper canvas { max-width: 100%; max-height: 100%; }
 

@@ -320,9 +320,9 @@ function rulesDrawStats(el, trades) {
 
     el.innerHTML = `
         <div class="kpi-grid">
-            <div class="stat-card kpi-card"><h3>Rules Followed</h3><div class="kpi-value">${rulesPct(okSum, ratedSum)}%</div><div class="kpi-sub">${okSum} of ${ratedSum} rule checks</div></div>
-            <div class="stat-card kpi-card"><h3>Trades all rules followed</h3><div class="kpi-value">${allOk.length}<span class="kpi-of"> / ${rated.length}</span></div><div class="kpi-sub">${Math.round(rulesPct(allOk.length, rated.length))}% of rated trades</div></div>
-            <div class="stat-card kpi-card"><h3>Clean Streak</h3><div class="kpi-value">${streak}</div><div class="kpi-sub">all rules followed in a row · best ${best}</div></div>
+            <div class="stat-card kpi-card"><h2>Rules Followed</h2><div class="kpi-value">${rulesPct(okSum, ratedSum)}%</div><div class="kpi-sub">${okSum} of ${ratedSum} rule checks</div></div>
+            <div class="stat-card kpi-card"><h2>Trades all rules followed</h2><div class="kpi-value">${allOk.length}<span class="kpi-of"> / ${rated.length}</span></div><div class="kpi-sub">${Math.round(rulesPct(allOk.length, rated.length))}% of rated trades</div></div>
+            <div class="stat-card kpi-card"><h2>Clean Streak</h2><div class="kpi-value">${streak}</div><div class="kpi-sub">all rules followed in a row · best ${best}</div></div>
         </div>
         <div class="rules-stats-grid" id="rules-stats-grid">${rulesChartCardsHtml(per, buckets.length > 1)}</div>`;
     rulesSetupGridDrag(document.getElementById('rules-stats-grid'));

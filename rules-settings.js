@@ -28,7 +28,7 @@ function renderRulesSettings(container, onChange) {
     card.className = 'setting-category-card rules-settings';
     const head = document.createElement('div');
     head.className = 'rules-settings-head';
-    head.innerHTML = '<h3 class="setting-cat-title" style="margin-bottom: 0;">Rules</h3>';
+    head.innerHTML = '<h2 class="setting-cat-title" style="margin-bottom: 0;">Rules</h2>';
     const toggle = document.createElement('button');
     toggle.className = enabled ? 'btn-secondary btn-sm' : 'btn-primary btn-sm';
     toggle.textContent = enabled ? 'Disable' : 'Enable';

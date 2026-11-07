@@ -3,7 +3,7 @@
 
 // --- Settings UI Architecture ---
 
-function createPillBox(dataArray, onChange) {
+function createPillBox(dataArray, onChange, label) {
     const wrapper = document.createElement('div');
     wrapper.className = 'pill-box';
     let draggedIndex = null;
@@ -102,6 +102,7 @@ function createPillBox(dataArray, onChange) {
         input.type = 'text';
         input.className = 'pill-input-field';
         input.placeholder = dataArray.length === 0 ? 'Type & press comma...' : '';
+        input.setAttribute('aria-label', label || 'Add an item');
         
         input.onkeydown = (e) => {
             if (e.key === ',' || e.key === 'Enter') {
@@ -136,7 +137,7 @@ function renderComplexSetting(title, configObj, type, onChange, toggleKey = null
     headerWrapper.style.alignItems = 'center';
     headerWrapper.style.marginBottom = '16px';
 
-    const header = document.createElement('h3');
+    const header = document.createElement('h2'); // a11y: h2 under the page h1
     header.textContent = title;
     header.className = 'setting-cat-title';
     header.style.marginBottom = '0';
@@ -230,6 +231,7 @@ function renderComplexSetting(title, configObj, type, onChange, toggleKey = null
             keyInput.type = 'text';
             keyInput.className = 'linear-input level-1-input';
             keyInput.value = key;
+            keyInput.setAttribute('aria-label', `${title}: name of “${key}”`);
             
             const delLvl1Btn = document.createElement('button');
             delLvl1Btn.innerHTML = '&times;';
@@ -266,17 +268,17 @@ function renderComplexSetting(title, configObj, type, onChange, toggleKey = null
                 const sub1Label = document.createElement('label');
                 sub1Label.textContent = 'Level 1';
                 subsDiv.appendChild(sub1Label);
-                subsDiv.appendChild(createPillBox(configObj[key].sub1, onChange));
+                subsDiv.appendChild(createPillBox(configObj[key].sub1, onChange, `${title} › ${key}, level 1: add an item`));
                 
                 const sub2Label = document.createElement('label');
                 sub2Label.textContent = 'Level 2';
                 subsDiv.appendChild(sub2Label);
-                subsDiv.appendChild(createPillBox(configObj[key].sub2, onChange));
+                subsDiv.appendChild(createPillBox(configObj[key].sub2, onChange, `${title} › ${key}, level 2: add an item`));
             } else if (type === '2-level') {
                 const subLabel = document.createElement('label');
                 subLabel.textContent = 'Level 1';
                 subsDiv.appendChild(subLabel);
-                subsDiv.appendChild(createPillBox(configObj[key], onChange));
+                subsDiv.appendChild(createPillBox(configObj[key], onChange, `${title} › ${key}: add an item`));
             }
             
             row.appendChild(subsDiv);
@@ -318,7 +320,7 @@ function renderSimpleSetting(title, dataArray, onChange, toggleKey = null) {
     headerWrapper.style.alignItems = 'center';
     headerWrapper.style.marginBottom = '16px';
 
-    const header = document.createElement('h3');
+    const header = document.createElement('h2'); // a11y: h2 under the page h1
     header.textContent = title;
     header.className = 'setting-cat-title';
     header.style.marginBottom = '0';
@@ -326,7 +328,7 @@ function renderSimpleSetting(title, dataArray, onChange, toggleKey = null) {
     
     container.appendChild(headerWrapper);
 
-    const pillBox = createPillBox(dataArray, onChange);
+    const pillBox = createPillBox(dataArray, onChange, `${title}: add an item`);
 
     if (toggleKey) {
         if (!appData.settings.features) appData.settings.features = {};
@@ -460,7 +462,7 @@ function renderSettingsContent() {
         scHeaderWrapper.style.alignItems = 'center';
         
         const scHeaderInfo = document.createElement('div');
-        scHeaderInfo.innerHTML = '<h3 class="setting-cat-title" style="margin-bottom: 0;">Auto-Screenshots</h3><p class="help-text" style="margin-top: 4px; margin-bottom: 0;">Connect a window for 1-click capturing during this session.</p>';
+        scHeaderInfo.innerHTML = '<h2 class="setting-cat-title" style="margin-bottom: 0;">Auto-Screenshots</h2><p class="help-text" style="margin-top: 4px; margin-bottom: 0;">Connect a window for 1-click capturing during this session.</p>';
         scHeaderWrapper.appendChild(scHeaderInfo);
 
         const isConnected = (activeMediaStream && activeMediaStream.active);

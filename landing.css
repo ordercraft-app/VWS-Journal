@@ -40,7 +40,7 @@
 
 /* Buttons */
 .lp-btn { display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 22px; border-radius: 100px; font-family: inherit; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: background 0.2s, border-color 0.2s; white-space: nowrap; }
-.lp-btn-primary { background: var(--lp-accent); color: #ffffff; }
+.lp-btn-primary, .landing .lp-btn-primary { background: var(--lp-accent); color: #ffffff; } /* a11y: white text (4.6:1); ".landing a" made it #f4f5f7 (4.2:1) */
 .lp-btn-primary:hover { background: #2f5bea; }
 .lp-btn-ghost { border-color: var(--lp-line-strong); color: var(--lp-text); background: transparent; }
 .lp-btn-ghost:hover { border-color: rgba(255, 255, 255, 0.3); }

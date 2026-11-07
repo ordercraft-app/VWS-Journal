@@ -296,7 +296,7 @@ async function backupSettingsEl(container) {
     const opts = document.createElement('div');
     opts.className = 'setting-category-card backup-options';
     opts.innerHTML = `
-        <h3 class="setting-cat-title">Backups</h3>
+        <h2 class="setting-cat-title">Backups</h2>
         <div class="backup-opt">
             <div><strong>Daily backup</strong><span>The first time you open your journal each day, your trades and settings are copied to the <em>backups</em> folder inside your journal folder.</span></div>
             <button type="button" class="${prefs.auto ? 'btn-secondary' : 'btn-primary'} btn-sm" data-backup="auto">${prefs.auto ? 'Disable' : 'Enable'}</button>
