@@ -6,7 +6,8 @@
 const FEATURES = {
     rules: { on: false, date: '', youtube: '' },   // Rules & grades (rules.js)
     share: { on: false, date: '', youtube: '' },   // Share for review (share.js)
-    grade: { on: true }                            // Grade C to A+ (already live, part of Rules & grades)
+    grade: { on: true },                           // Grade C to A+ (already live, part of Rules & grades)
+    backup: { on: false, date: '', youtube: '' }   // Automatic backups (backup.js)
 };
 
 // --- App State ---

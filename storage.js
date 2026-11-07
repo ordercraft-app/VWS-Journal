@@ -280,6 +280,8 @@ function migrateSettings() {
 
 async function loadDataFromFile() {
     journalStamp = {};
+    let damaged = null; // { file, text } when a journal file can't be read
+    if (journalDamaged) { journalDamaged = null; if (journalLockHeld) journalReadOnly = false; }
     try {
         // Load settings first
         try {
@@ -288,7 +290,8 @@ async function loadDataFromFile() {
             const settingsContents = await settingsFile.text();
             journalRememberLoaded('settings.json', settingsFile, settingsContents);
             if(settingsContents) {
-                appData.settings = JSON.parse(settingsContents);
+                try { appData.settings = JSON.parse(settingsContents); }
+                catch (pe) { damaged = { file: 'settings.json', text: settingsContents }; appData.settings = { ...getDefaultSettings(), theme: appData.settings.theme }; }
                 if (!appData.settings.symbol) appData.settings.symbol = ["NQ", "ES", "GC", "CL", "BTC"];
             } else {
                 appData.settings = { ...getDefaultSettings(), theme: appData.settings.theme };
@@ -306,7 +309,9 @@ async function loadDataFromFile() {
             const tradesContents = await tradesFile.text();
             journalRememberLoaded('vwap-journal.json', tradesFile, tradesContents);
             if(tradesContents) {
-                const parsedTrades = JSON.parse(tradesContents);
+                let parsedTrades;
+                try { parsedTrades = JSON.parse(tradesContents); }
+                catch (pe) { damaged = { file: 'vwap-journal.json', text: tradesContents }; parsedTrades = []; }
                 // Handle migration from old format where trades and settings were in one file
                 if (parsedTrades.trades) {
                    appData.trades = parsedTrades.trades;
@@ -373,6 +378,11 @@ async function loadDataFromFile() {
         journalReloading = false;
         await journalLockAcquire();
 
+        // A file that can't be read is kept and never written over (read only, restore a backup).
+        // Otherwise: today's backup of the files as they were loaded (backup.js)
+        if (damaged && typeof backupHandleDamaged === 'function') await backupHandleDamaged(damaged.file, damaged.text);
+        else if (typeof backupDailyIfNeeded === 'function') await backupDailyIfNeeded();
+
         // Force save to ensure both files exist in the new format
         await autoSave();
         renderDashboard();
@@ -400,6 +410,7 @@ let journalSaveError = null;    // message of the last failed save, null = all s
 let journalReadOnly = false;    // this window may not save (journal open in another window)
 let journalReloading = false;   // a newer version from disk is being loaded
 let journalStamp = {};          // file name → { t: lastModified, text } as last loaded or written
+let journalDamaged = null;      // { file, keptAs } when a journal file could not be read (backup.js)
 
 const JOURNAL_FILES = ['vwap-journal.json', 'settings.json'];
 
@@ -571,7 +582,12 @@ async function journalTakeOver() {
 function journalStatusSync() {
     const el = document.getElementById('journal-status');
     if (!el) return;
-    if (journalReadOnly) {
+    if (journalDamaged) {
+        el.hidden = false;
+        el.className = 'journal-status is-error';
+        el.innerHTML = `<span class="journal-status-dot"></span>File damaged<span class="journal-status-act">${typeof backupFeatureOn !== 'undefined' && backupFeatureOn ? 'Restore a backup' : 'What now?'}</span>`;
+        el.title = journalDamaged.file + ' could not be read';
+    } else if (journalReadOnly) {
         el.hidden = false;
         el.className = 'journal-status is-readonly';
         el.innerHTML = '<span class="journal-status-dot"></span>Read only<span class="journal-status-act">Use it here</span>';
@@ -589,7 +605,11 @@ function journalStatusSync() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('journal-status');
-    if (el) el.addEventListener('click', () => { if (journalReadOnly) journalTakeOver(); else autoSave(); });
+    if (el) el.addEventListener('click', () => {
+        if (journalDamaged) { if (typeof backupFeatureOn !== 'undefined' && backupFeatureOn) backupRestoreDialog(); else backupDamagedDialog(); }
+        else if (journalReadOnly) journalTakeOver();
+        else autoSave();
+    });
 });
 
 // Unsaved changes: let the browser ask before the window closes

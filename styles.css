@@ -1701,3 +1701,40 @@ html.system-own .faq-codes { display: none; }
 .close-btn:not(.viewer-close-btn):hover, .rules-code-close:not(.release-dialog .rules-code-close):hover { background: var(--bg-input); color: var(--text-main); }
 .modal-header .close-btn, .share-dialog-header .close-btn { margin-right: -6px; }
 .modal-content:focus, .share-dialog:focus, .app-dialog:focus, #image-viewer-modal:focus { outline: none; }
+
+/* ---------- Automatic backups (backup.js) ---------- */
+.backup-status-card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin-bottom: 16px; border-radius: 16px; background: var(--bg-panel); }
+.backup-status-icon { width: 38px; height: 38px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+.backup-status-icon.is-off { background: var(--bg-hover); color: var(--text-muted); }
+.backup-status-text { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.backup-status-text strong { font-size: 14px; font-weight: 600; color: var(--text-main); }
+.backup-status-text span { font-size: 13px; color: var(--text-muted); }
+.backup-status-actions, .backup-opt-btns { display: flex; gap: 8px; flex: none; }
+.backup-options { display: flex; flex-direction: column; gap: 0; }
+.backup-opt { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 0; border-top: 1px solid var(--border-color); }
+.backup-options .setting-cat-title + .backup-opt { border-top: none; padding-top: 0; }
+.backup-opt > div:first-child { display: flex; flex-direction: column; gap: 4px; max-width: 640px; }
+.backup-opt strong { font-size: 13.5px; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+.backup-opt span { font-size: 13px; line-height: 1.5; color: var(--text-muted); }
+.backup-opt span svg { vertical-align: -3px; }
+.backup-opt-tag { font-size: 10px !important; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted) !important; background: var(--bg-hover); padding: 2px 7px; border-radius: 100px; }
+.backup-foot { margin: 6px 0 0; }
+.app-dialog.backup-dialog { width: 480px; position: relative; }
+.backup-latest { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--success) 8%, transparent); border: 1px solid color-mix(in srgb, var(--success) 25%, transparent); }
+.backup-latest.is-empty { background: var(--bg-input); border-color: var(--border-color); }
+.backup-latest-icon { color: var(--success); margin-top: 1px; }
+.backup-latest.is-empty .backup-latest-icon { color: var(--text-muted); }
+.backup-latest div { display: flex; flex-direction: column; gap: 3px; }
+.backup-latest strong { font-size: 13px; color: var(--text-main); }
+.backup-latest span { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+.backup-rows { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+.backup-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-input); cursor: pointer; }
+.backup-row:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg-input)); }
+.backup-row input { accent-color: var(--accent); margin: 0; }
+.backup-row-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.backup-row-main strong { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.backup-row-main span { font-size: 12px; color: var(--text-muted); }
+.backup-row-tag { font-size: 11px; font-weight: 600; color: var(--text-muted); background: var(--bg-hover); padding: 2px 8px; border-radius: 100px; }
+.backup-row-tag.is-other { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.backup-none { font-size: 13px; color: var(--text-muted); margin: 0; }
+html:not(.backup-on) .faq-backup-on, html.backup-on .faq-backup-off { display: none; }

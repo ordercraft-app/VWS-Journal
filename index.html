@@ -724,13 +724,34 @@
                             </div>
                         </div>
 
-                        <div class="faq-item">
+                        <div class="faq-item faq-backup-off">
                             <div class="faq-question">
                                 <span>How do I back up my journal?</span>
                                 <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                             <div class="faq-answer">
                                 <p>Because all data lives exclusively on your computer, backing up is extremely simple. Just copy your entire "VWS Journal" folder (containing settings.json, vwap-journal.json, and your /img folder) to a USB drive, Google Drive, Dropbox, or iCloud.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item faq-backup-on">
+                            <div class="faq-question">
+                                <span>How do I back up my journal?</span>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>The journal backs itself up. The first time you open it each day, your trades and settings are copied to the <strong>backups</strong> folder inside your journal folder. You find them in <strong>Settings › Backups</strong>, where you can also make a backup by hand, choose how long backups are kept and restore one.</p>
+                                <p>Want an extra copy somewhere else? Copy the whole journal folder to Google Drive, Dropbox or a USB stick. That copy also has your screenshots (the <strong>img</strong> folder).</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item faq-backup-on">
+                            <div class="faq-question">
+                                <span>The app says my journal file is damaged. What now?</span>
+                                <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                            <div class="faq-answer">
+                                <p>This can happen when a save is interrupted or a sync service (iCloud, Dropbox, OneDrive) writes half a file. The journal never writes over a damaged file: it keeps it as <strong>vwap-journal.damaged-…json</strong> and offers your latest backup. Click <strong>Restore latest backup</strong>, or choose another day. Your screenshots are not touched.</p>
                             </div>
                         </div>
 
@@ -986,6 +1007,7 @@
     <script defer src="rules-settings.js"></script>
     <script defer src="rules-stats.js"></script>
     <script defer src="system.js"></script>
+    <script defer src="backup.js"></script>
     <script defer src="releases.js"></script>
     <script defer src="app.js"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->

@@ -10,6 +10,25 @@
 // The video only loads when someone clicks it.
 const RELEASES = [
     {
+        id: 'automatic-backups',
+        on: () => typeof backupFeatureOn !== 'undefined' && backupFeatureOn,
+        date: FEATURES.backup ? FEATURES.backup.date : '',
+        youtube: FEATURES.backup ? FEATURES.backup.youtube : '',
+        icon: 'shield',
+        title: 'Automatic backups',
+        summary: 'Your journal is copied every day. Restore it in one click.',
+        image: 'releases/automatic-backups.webp',
+        intro: 'Your trades are your most valuable data. From now on the journal makes a copy every day, and a damaged file can never cost you your trades again.',
+        points: [
+            ['check', 'A copy every day', 'The first time you open your journal each day, in the backups folder.'],
+            ['plus', 'Restore in one click', 'Settings › Backups: choose a day and you are back.'],
+            ['eye', 'A damaged file is caught', 'Never overwritten: the app offers your latest backup.'],
+            ['link', 'Undo a restore too', 'Before a restore, your journal is saved as a backup first.']
+        ],
+        cta: 'Open Backups',
+        go: () => { if (typeof btnNavSettings !== 'undefined' && btnNavSettings) btnNavSettings.click(); if (typeof switchSettingsTab === 'function') switchSettingsTab('backups'); }
+    },
+    {
         id: 'share-for-review',
         on: () => typeof shareFeatureOn !== 'undefined' && shareFeatureOn,
         date: FEATURES.share.date,
@@ -54,6 +73,7 @@ const RELEASES = [
 ];
 
 const RELEASE_ICONS = {
+    shield: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>',
     rules: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
     share: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
     chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',

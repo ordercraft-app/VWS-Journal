@@ -404,8 +404,20 @@ function renderSettingsContent() {
     if (tabRules) tabsDiv.appendChild(tabRules);
     tabsDiv.appendChild(tabChart);
     tabsDiv.appendChild(tabScreenshot);
+    // Backups tab (backup.js), only while automatic backups are switched on
+    let tabBackups = null;
+    if (typeof backupFeatureOn !== 'undefined' && backupFeatureOn) {
+        tabBackups = document.createElement('button');
+        tabBackups.className = `settings-tab-btn ${currentSettingsTab === 'backups' ? 'active' : ''}`;
+        tabBackups.textContent = 'Backups';
+        tabBackups.onclick = () => switchSettingsTab('backups');
+        tabsDiv.appendChild(tabBackups);
+    } else if (currentSettingsTab === 'backups') {
+        currentSettingsTab = 'journal';
+        tabJournal.classList.add('active');
+    }
     settingsContainer.appendChild(tabsDiv);
-    slidePillIndicator(tabsDiv, { journal: tabJournal, rules: tabRules, chart: tabChart, screenshot: tabScreenshot }[currentSettingsTab], 'settingsTabs');
+    slidePillIndicator(tabsDiv, { journal: tabJournal, rules: tabRules, chart: tabChart, screenshot: tabScreenshot, backups: tabBackups }[currentSettingsTab], 'settingsTabs');
     
     const onSettingsChange = async () => { await autoSave(); };
 
@@ -434,6 +446,9 @@ function renderSettingsContent() {
         } else if (currentSettingsTab === 'rules' && showRulesTab) {
         // --- Rules (rules.js) ---
         renderRulesSettings(settingsContainer, onSettingsChange);
+        } else if (currentSettingsTab === 'backups' && tabBackups) {
+        // --- Backups (backup.js) ---
+        backupSettingsEl(settingsContainer);
         } else if (currentSettingsTab === 'screenshot') {
         // --- Auto-Screenshot Settings Block (Browser API) ---
         const screenshotContainer = document.createElement('div');

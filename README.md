@@ -91,6 +91,7 @@ The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHu
 | `rules-settings.js` | Settings › Rules |
 | `rules-stats.js` | Stats › Rules and the rules charts |
 | `system.js` | VWS Journal system or your own system |
+| `backup.js` | Automatic daily backups, restore, and protection against a damaged journal file |
 | `releases.js` | What's new (the bell, top right) |
 | `app.js` | Start-up, navigation and keyboard shortcuts |
 | `settings.json` | Default settings |
