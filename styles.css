@@ -1742,3 +1742,27 @@ html.system-own .faq-codes { display: none; }
 .backup-row-tag.is-other { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .backup-none { font-size: 13px; color: var(--text-muted); margin: 0; }
 html:not(.backup-on) .faq-backup-on, html.backup-on .faq-backup-off { display: none; }
+
+/* Keyboard shortcuts (press ?) */
+.app-dialog.keys-dialog { width: 540px; position: relative; gap: 18px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.keys-head { display: flex; align-items: center; gap: 14px; padding-right: 36px; }
+.keys-head .app-dialog-copy { gap: 4px; }
+.keys-groups { display: flex; flex-direction: column; gap: 10px; }
+.keys-group { border-radius: 12px; background: var(--group-bg); border: 1px solid var(--group-border); padding: 10px 14px 6px; }
+.keys-group.is-here { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.keys-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.keys-group-title { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); }
+.keys-group-note { font-size: 11px; color: var(--text-muted); }
+.keys-group-note::before { content: "·"; margin-right: 8px; }
+.keys-here { margin-left: auto; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 100px; font-size: 11px; font-weight: 600; color: #8fa9ff; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+[data-theme="light"] .keys-here { color: #1e47c8; }
+.keys-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 36px; padding: 4px 0; border-top: 1px solid var(--divider-bg); }
+.keys-group-head + .keys-row { border-top: 0; }
+.keys-label { display: flex; flex-direction: column; gap: 1px; font-size: 13.5px; color: var(--text-main); }
+.keys-note { font-size: 11.5px; color: var(--text-muted); }
+.keys-keys { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.keys-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: 0 8px; border-radius: 7px; background: var(--bg-input); border: 1px solid var(--border-color); border-bottom-width: 2px; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--text-main); }
+.keys-kbd.is-inline { min-width: 20px; height: 20px; padding: 0 5px; font-size: 11px; vertical-align: 1px; }
+.keys-or { font-size: 11px; color: var(--text-muted); padding: 0 1px; }
+.keys-foot { margin: 0; font-size: 12px; color: var(--text-muted); }
+.keys-dialog:focus { outline: none; }

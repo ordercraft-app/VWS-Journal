@@ -61,14 +61,17 @@ Your trades never leave your computer. To make a backup, copy the folder. To mov
 | --- | --- | --- |
 | New trade | Option + N | Alt + N |
 | Dark / light mode | Option + M | Alt + M |
+| Show all shortcuts | ? | ? |
+| Close a popup | Esc | Esc |
 | Jump to today | Option + T | Alt + T |
 | Previous / next day | Arrow Left / Right | Arrow Left / Right |
 | Previous / next week (same weekday) | Shift + Arrow Left / Right | Shift + Arrow Left / Right |
 | Save trade (in the trade popup) | Option + S | Alt + S |
 | Close the trade popup | Option + C | Alt + C |
 | Delete trade (in the trade popup) | Option + Backspace | Alt + Backspace |
+| Mark rule 1 to 9 (Rules tab of the trade popup, when Rules are on) | 1 – 9 | 1 – 9 |
 
-Day and week shortcuts work on the dashboard when you are not typing in a field.
+Day and week shortcuts work on the dashboard when you are not typing in a field. Press ? anywhere in the app to see all shortcuts, or click the keyboard button in the sidebar.
 
 ## Project structure
 

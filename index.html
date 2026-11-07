@@ -52,8 +52,8 @@
         "creator": { "@type": "Organization", "name": "Order Craft", "url": "https://marketplace.elgato.com/@ordercraft" }
     }
     </script>
-    <link rel="stylesheet" href="styles.css?v=2026-11-07b">
-    <link rel="stylesheet" href="landing.css?v=2026-11-07b">
+    <link rel="stylesheet" href="styles.css?v=2026-11-07c">
+    <link rel="stylesheet" href="landing.css?v=2026-11-07c">
     <script>
         // Returning users: hide the welcome page before the first paint (gate.js decides for real)
         try { if (localStorage.getItem('vws-has-journal') === '1') document.documentElement.classList.add('has-journal'); } catch (e) {}
@@ -350,7 +350,10 @@
                 <button class="btn-icon" id="btn-nav-help" title="Help & FAQ">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 </button>
-                <div style="margin-top: auto;">
+                <div style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                    <button class="btn-icon" id="btn-keys" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M9 15.5h6"/><path d="M10 13h4"/></svg>
+                    </button>
                     <button class="btn-icon" id="btn-theme-toggle" title="Toggle Theme">
                         <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                         <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -818,7 +821,7 @@
                                 <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                             <div class="faq-answer">
-                                <p>Use these hotkeys to navigate the app faster like a power user.</p>
+                                <p>Use these hotkeys to navigate the app faster like a power user. <strong>Tip:</strong> press <kbd class="keys-kbd is-inline">?</kbd> anywhere in the app (when you are not typing) to see them in a popup.</p>
                                 <div style="overflow-x: auto;">
                                 <table class="hotkey-table">
                                     <thead>
@@ -832,6 +835,8 @@
                                         <tr><td colspan="3" class="table-section-title">Global</td></tr>
                                         <tr><td>New Trade</td><td><code>Option + N</code></td><td><code>Alt + N</code></td></tr>
                                         <tr><td>Toggle Dark/Light Mode</td><td><code>Option + M</code></td><td><code>Alt + M</code></td></tr>
+                                        <tr><td>Show all shortcuts</td><td><code>?</code></td><td><code>?</code></td></tr>
+                                        <tr><td>Close a popup</td><td><code>Esc</code></td><td><code>Esc</code></td></tr>
                                         <tr><td colspan="3" class="table-section-title">Dashboard (When not typing)</td></tr>
                                         <tr><td>Jump to Today</td><td><code>Option + T</code></td><td><code>Alt + T</code></td></tr>
                                         <tr><td>Previous / Next Day</td><td><code>Arrow Left / Right</code></td><td><code>Arrow Left / Right</code></td></tr>
@@ -840,6 +845,7 @@
                                         <tr><td>Save Trade</td><td><code>Option + S</code></td><td><code>Alt + S</code></td></tr>
                                         <tr><td>Cancel</td><td><code>Option + C</code></td><td><code>Alt + C</code></td></tr>
                                         <tr><td>Delete Trade</td><td><code>Option + Backspace</code></td><td><code>Alt + Backspace</code></td></tr>
+                                        <tr class="faq-rules"><td>Mark rule 1 to 9 (Rules tab)</td><td><code>1</code> – <code>9</code></td><td><code>1</code> – <code>9</code></td></tr>
                                     </tbody>
                                 </table>
                                 </div>
@@ -995,22 +1001,22 @@
     </div>
 
     <!-- ?v=: raised with every update, so browsers load the new files instead of a cached mix -->
-    <script defer src="globals.js?v=2026-11-07b"></script>
-    <script defer src="storage.js?v=2026-11-07b"></script>
-    <script defer src="ui.js?v=2026-11-07b"></script>
-    <script defer src="ui-settings.js?v=2026-11-07b"></script>
-    <script defer src="tradeform.js?v=2026-11-07b"></script>
-    <script defer src="share.js?v=2026-11-07b"></script>
-    <script defer src="customcharts.js?v=2026-11-07b"></script>
-    <script defer src="gate.js?v=2026-11-07b"></script>
-    <script defer src="charts.js?v=2026-11-07b"></script>
-    <script defer src="rules.js?v=2026-11-07b"></script>
-    <script defer src="rules-settings.js?v=2026-11-07b"></script>
-    <script defer src="rules-stats.js?v=2026-11-07b"></script>
-    <script defer src="system.js?v=2026-11-07b"></script>
-    <script defer src="backup.js?v=2026-11-07b"></script>
-    <script defer src="releases.js?v=2026-11-07b"></script>
-    <script defer src="app.js?v=2026-11-07b"></script>
+    <script defer src="globals.js?v=2026-11-07c"></script>
+    <script defer src="storage.js?v=2026-11-07c"></script>
+    <script defer src="ui.js?v=2026-11-07c"></script>
+    <script defer src="ui-settings.js?v=2026-11-07c"></script>
+    <script defer src="tradeform.js?v=2026-11-07c"></script>
+    <script defer src="share.js?v=2026-11-07c"></script>
+    <script defer src="customcharts.js?v=2026-11-07c"></script>
+    <script defer src="gate.js?v=2026-11-07c"></script>
+    <script defer src="charts.js?v=2026-11-07c"></script>
+    <script defer src="rules.js?v=2026-11-07c"></script>
+    <script defer src="rules-settings.js?v=2026-11-07c"></script>
+    <script defer src="rules-stats.js?v=2026-11-07c"></script>
+    <script defer src="system.js?v=2026-11-07c"></script>
+    <script defer src="backup.js?v=2026-11-07c"></script>
+    <script defer src="releases.js?v=2026-11-07c"></script>
+    <script defer src="app.js?v=2026-11-07c"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>
     <!-- End Cloudflare Web Analytics -->
