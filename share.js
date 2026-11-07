@@ -8,10 +8,9 @@
 // because people pass settings files around and this one holds secret keys).
 
 // ---------- Release switch ----------
-// false = sharing is hidden for everyone (all buttons and entry points),
-//         but everything still exists and works behind the scenes.
-// true  = sharing is visible for everyone.
-const SHARE_FEATURE_ENABLED = false;
+// Set in FEATURES (globals.js). false = sharing is hidden for everyone (all buttons and
+// entry points), but everything still exists and works behind the scenes; true = visible for everyone.
+const SHARE_FEATURE_ENABLED = !!FEATURES.share.on;
 
 // For testing while hidden: open the app once with ?share=on (or ?share=off).
 // This browser remembers the choice; other people see nothing.

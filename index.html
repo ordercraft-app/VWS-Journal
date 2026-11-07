@@ -63,8 +63,8 @@
          outside your own site can change the code that runs in the journal. -->
     <link rel="stylesheet" href="vendor/flatpickr-4.6.13/flatpickr.min.css">
     <link id="flatpickr-theme" rel="stylesheet" href="vendor/flatpickr-4.6.13/themes/dark.css">
-    <script src="vendor/chart.js-4.5.1/chart.umd.min.js"></script>
-    <script src="vendor/flatpickr-4.6.13/flatpickr.min.js"></script>
+    <script defer src="vendor/chart.js-4.5.1/chart.umd.min.js"></script>
+    <script defer src="vendor/flatpickr-4.6.13/flatpickr.min.js"></script>
 </head>
 <body>
     <!-- Welcome page for new visitors. Static HTML, so search engines and AI assistants can read it.
@@ -234,7 +234,7 @@
                             <li><span class="lp-istep">4</span><span>Confirm with</span><span class="lp-menu-item is-active">Install</span></li>
                         </ol>
                     </div>
-                    <img src="install-guide.png" width="1140" height="824" alt="Chrome menu with Cast, save and share, and Install page as app" loading="lazy">
+                    <img src="install-guide.webp" width="1140" height="824" alt="Chrome menu with Cast, save and share, and Install page as app" loading="lazy">
                 </div>
             </section>
 
@@ -371,6 +371,7 @@
                     <div class="header-divider"></div>
                     <input type="date" id="date-picker" class="linear-input" style="width: auto;">
                     <button class="btn-secondary" id="btn-today">Today</button>
+                    <button type="button" class="journal-status" id="journal-status" hidden></button>
                 </div>
                 <div class="header-right">
                     <button class="btn-secondary shares-header-btn" id="btn-your-shares" hidden>Your shares <span class="shares-badge" id="shares-badge">0/10</span></button>
@@ -787,7 +788,7 @@
                                     <li>Select <strong>Cast, save and share</strong>.</li>
                                     <li>Click <strong>Install page as app...</strong></li>
                                 </ul>
-                                <img src="install-guide.png" alt="Install instructions" style="width: 100%; border-radius: 6px; margin-top: 12px; margin-bottom: 12px;">
+                                <img src="install-guide.webp" alt="Install instructions" style="width: 100%; border-radius: 6px; margin-top: 12px; margin-bottom: 12px;">
                             </div>
                         </div>
                         <div class="faq-item">
@@ -972,18 +973,21 @@
         <img id="enlarged-image" src="" alt="Enlarged view">
     </div>
 
-    <script src="globals.js"></script>
-    <script src="storage.js"></script>
-    <script src="ui.js"></script>
-    <script src="tradeform.js"></script>
-    <script src="share.js"></script>
-    <script src="customcharts.js"></script>
-    <script src="gate.js"></script>
-    <script src="charts.js"></script>
-    <script src="rules.js"></script>
-    <script src="system.js"></script>
-    <script src="releases.js"></script>
-    <script src="app.js"></script>
+    <script defer src="globals.js"></script>
+    <script defer src="storage.js"></script>
+    <script defer src="ui.js"></script>
+    <script defer src="ui-settings.js"></script>
+    <script defer src="tradeform.js"></script>
+    <script defer src="share.js"></script>
+    <script defer src="customcharts.js"></script>
+    <script defer src="gate.js"></script>
+    <script defer src="charts.js"></script>
+    <script defer src="rules.js"></script>
+    <script defer src="rules-settings.js"></script>
+    <script defer src="rules-stats.js"></script>
+    <script defer src="system.js"></script>
+    <script defer src="releases.js"></script>
+    <script defer src="app.js"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>
     <!-- End Cloudflare Web Analytics -->

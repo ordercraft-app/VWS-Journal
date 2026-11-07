@@ -279,12 +279,14 @@ function migrateSettings() {
 }
 
 async function loadDataFromFile() {
+    journalStamp = {};
     try {
         // Load settings first
         try {
             const settingsHandle = await dirHandle.getFileHandle('settings.json');
             const settingsFile = await settingsHandle.getFile();
             const settingsContents = await settingsFile.text();
+            journalRememberLoaded('settings.json', settingsFile, settingsContents);
             if(settingsContents) {
                 appData.settings = JSON.parse(settingsContents);
                 if (!appData.settings.symbol) appData.settings.symbol = ["NQ", "ES", "GC", "CL", "BTC"];
@@ -302,6 +304,7 @@ async function loadDataFromFile() {
             const tradesHandle = await dirHandle.getFileHandle('vwap-journal.json', { create: true });
             const tradesFile = await tradesHandle.getFile();
             const tradesContents = await tradesFile.text();
+            journalRememberLoaded('vwap-journal.json', tradesFile, tradesContents);
             if(tradesContents) {
                 const parsedTrades = JSON.parse(tradesContents);
                 // Handle migration from old format where trades and settings were in one file
@@ -366,6 +369,10 @@ async function loadDataFromFile() {
         // Shared trades and their reviews (share.json)
         if (typeof loadShareState === 'function') await loadShareState();
 
+        // Only one window saves to a journal (a second window opens read only)
+        journalReloading = false;
+        await journalLockAcquire();
+
         // Force save to ensure both files exist in the new format
         await autoSave();
         renderDashboard();
@@ -375,34 +382,220 @@ async function loadDataFromFile() {
         if (typeof maybeShowScreenshotPromo === 'function') maybeShowScreenshotPromo();
     } catch (err) {
         console.error("Load process failed:", err);
+        journalReloading = false;
     }
 }
 
 // --- AutoSave Logic ---
+// One save at a time; a save asked for while one runs is done right after it.
+// A failed save shows "Not saved · Try again" at the top (journal status), and the
+// browser warns before closing the window. Before writing, the files on disk are
+// compared with what this window loaded or wrote last: changed outside the app
+// (another computer, a sync service) → the user chooses which version to keep.
+// Only one window can save to a journal: a second window opens read only.
+
+let journalSaving = null;       // the save in progress (a promise)
+let journalSaveAgain = false;   // another save was asked for while saving
+let journalSaveError = null;    // message of the last failed save, null = all saved
+let journalReadOnly = false;    // this window may not save (journal open in another window)
+let journalReloading = false;   // a newer version from disk is being loaded
+let journalStamp = {};          // file name → { t: lastModified, text } as last loaded or written
+
+const JOURNAL_FILES = ['vwap-journal.json', 'settings.json'];
 
 async function autoSave() {
     if (!dirHandle) return;
-    try {
-        const hasPermission = await verifyPermission(dirHandle, true);
-        if (!hasPermission) return;
-        fileConnected = true;
-        
-        // Save Trades
-        const tradesHandle = await dirHandle.getFileHandle('vwap-journal.json', { create: true });
-        const tradesWritable = await tradesHandle.createWritable();
-        await tradesWritable.write(JSON.stringify(appData.trades, null, 2));
-        await tradesWritable.close();
+    if (journalReadOnly) { journalStatusSync(); return; }
+    if (journalSaving) { journalSaveAgain = true; return journalSaving; }
+    journalSaving = (async () => {
+        do {
+            journalSaveAgain = false;
+            await journalSaveNow();
+        } while (journalSaveAgain && !journalReadOnly && !journalReloading);
+    })();
+    try { await journalSaving; } finally { journalSaving = null; }
+}
 
-        // Save Settings
-        const settingsHandle = await dirHandle.getFileHandle('settings.json', { create: true });
-        const settingsWritable = await settingsHandle.createWritable();
-        await settingsWritable.write(JSON.stringify(appData.settings, null, 2));
-        await settingsWritable.close();
-        
+async function journalSaveNow() {
+    if (journalReloading) return;
+    try {
+        let hasPermission = false;
+        try { hasPermission = await verifyPermission(dirHandle, true); } catch (e) { hasPermission = false; }
+        if (!hasPermission) throw new Error('no-permission');
+        fileConnected = true;
+        const texts = {
+            'vwap-journal.json': JSON.stringify(appData.trades, null, 2),
+            'settings.json': JSON.stringify(appData.settings, null, 2)
+        };
+        if (await journalChangedOutside()) {
+            const keepMine = await journalAskWhichVersion();
+            if (!keepMine) {
+                journalReloading = true;
+                setTimeout(async () => {
+                    await loadDataFromFile();
+                    if (typeof showToast === 'function') showToast('The newer version of your journal is loaded.', 'success');
+                }, 0);
+                return;
+            }
+        }
+        for (const name of JOURNAL_FILES) {
+            const handle = await dirHandle.getFileHandle(name, { create: true });
+            const writable = await handle.createWritable();
+            await writable.write(texts[name]);
+            await writable.close();
+            const f = await handle.getFile();
+            journalStamp[name] = { t: f.lastModified, text: texts[name] };
+        }
+        const hadError = !!journalSaveError;
+        journalSaveError = null;
+        journalStatusSync();
+        if (hadError && typeof showToast === 'function') showToast('Saved. Your journal is up to date.', 'success');
     } catch (err) {
-        console.error("Background save failed:", err);
+        console.error('Background save failed:', err);
+        const first = !journalSaveError;
+        journalSaveError = err && err.message === 'no-permission'
+            ? 'No access to your journal folder.'
+            : 'Your journal could not be saved.';
+        journalStatusSync();
+        if (first && typeof showToast === 'function') {
+            showToast(`${journalSaveError} Your last change is not saved yet.`, 'error', {
+                duration: 8000, action: { label: 'Try again', onClick: () => autoSave() }
+            });
+        }
     }
 }
+
+// Remember the files as they are on disk now (after loading them)
+function journalRememberLoaded(name, file, text) {
+    journalStamp[name] = file ? { t: file.lastModified, text } : null;
+}
+
+// True when a journal file on disk is different from what this window loaded or wrote last
+async function journalChangedOutside() {
+    for (const name of JOURNAL_FILES) {
+        const known = journalStamp[name];
+        if (!known) continue;
+        let file;
+        try { file = await (await dirHandle.getFileHandle(name)).getFile(); } catch (e) { continue; } // gone: written again below
+        if (file.lastModified === known.t) continue;
+        const text = await file.text();
+        if (text === known.text) { known.t = file.lastModified; continue; } // touched, not changed
+        return true;
+    }
+    return false;
+}
+
+async function journalAskWhichVersion() {
+    if (typeof appConfirm !== 'function') return true;
+    return appConfirm({
+        title: 'Your journal changed outside this window',
+        message: 'A newer version of your journal was saved from somewhere else, for example another computer or a sync service like iCloud or Dropbox. Load the newer version (your last change in this window is not kept), or keep this window’s version (the newer version is overwritten).',
+        confirmText: 'Keep this window’s version',
+        cancelText: 'Load the newer version',
+        icon: 'warn'
+    });
+}
+
+// ---------- One window per journal ----------
+
+let journalLockName = '';
+let journalLockHeld = false;
+let journalLockFree = null;     // releases the lock this window holds
+
+function journalLockRequest(name, opts) {
+    return new Promise(resolve => {
+        navigator.locks.request(name, opts, lock => {
+            if (!lock) { resolve(false); return null; }
+            journalLockHeld = true;
+            journalReadOnly = false;
+            journalStatusSync();
+            resolve(true);
+            return new Promise(release => {
+                journalLockFree = () => { journalLockHeld = false; journalLockFree = null; release(); };
+            });
+        }).catch(err => {
+            // Another window took the journal over
+            if (err && err.name === 'AbortError' && journalLockName === name) {
+                journalLockHeld = false;
+                journalLockFree = null;
+                journalReadOnly = true;
+                journalStatusSync();
+                if (typeof showToast === 'function') showToast('Your journal is now used in another window. Changes in this window are not saved.', 'error', {
+                    duration: 10000, action: { label: 'Use it here', onClick: journalTakeOver }
+                });
+            }
+            resolve(false);
+        });
+    });
+}
+
+// Called after a journal is loaded
+async function journalLockAcquire() {
+    if (!dirHandle || !navigator.locks) return;
+    const name = 'vws-journal:' + dirHandle.name;
+    if (journalLockHeld && journalLockName === name) return;
+    if (journalLockFree) journalLockFree(); // another folder was open before
+    journalLockName = name;
+    const got = await journalLockRequest(name, { ifAvailable: true });
+    if (!got && !journalLockHeld) {
+        journalReadOnly = true;
+        journalStatusSync();
+        setTimeout(journalOpenElsewhere, 0);
+    }
+}
+
+async function journalOpenElsewhere() {
+    if (typeof appConfirm !== 'function') return;
+    const useHere = await appConfirm({
+        title: 'Your journal is open in another window',
+        message: 'Two windows on the same journal overwrite each other’s changes. This window is read only for now. Use the journal here, and the other window stops saving.',
+        confirmText: 'Use it here',
+        cancelText: 'Keep read only',
+        tone: 'primary', icon: 'warn'
+    });
+    if (useHere) journalTakeOver();
+}
+
+async function journalTakeOver() {
+    if (!navigator.locks || !journalLockName) return;
+    const got = await journalLockRequest(journalLockName, { steal: true });
+    if (!got) return;
+    // The other window may have saved changes: start from what is on disk now
+    journalReloading = true;
+    await loadDataFromFile();
+    if (typeof showToast === 'function') showToast('Your journal is used in this window now.', 'success');
+}
+
+// ---------- Journal status (top bar) ----------
+
+function journalStatusSync() {
+    const el = document.getElementById('journal-status');
+    if (!el) return;
+    if (journalReadOnly) {
+        el.hidden = false;
+        el.className = 'journal-status is-readonly';
+        el.innerHTML = '<span class="journal-status-dot"></span>Read only<span class="journal-status-act">Use it here</span>';
+        el.title = 'Your journal is open in another window';
+    } else if (journalSaveError) {
+        el.hidden = false;
+        el.className = 'journal-status is-error';
+        el.innerHTML = '<span class="journal-status-dot"></span>Not saved<span class="journal-status-act">Try again</span>';
+        el.title = journalSaveError;
+    } else {
+        el.hidden = true;
+        el.className = 'journal-status';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('journal-status');
+    if (el) el.addEventListener('click', () => { if (journalReadOnly) journalTakeOver(); else autoSave(); });
+});
+
+// Unsaved changes: let the browser ask before the window closes
+window.addEventListener('beforeunload', (e) => {
+    if (journalSaveError || journalSaving) { e.preventDefault(); e.returnValue = ''; }
+});
 
 // --- Image Handling Logic ---
 

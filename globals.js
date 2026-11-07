@@ -1,3 +1,14 @@
+// --- Releases: switch features on or off for everyone (one place) ---
+// on:      true = visible for everyone, false = hidden (test per browser with ?rules=on / ?share=on)
+// date:    the month the release went on, shown in What's new (the bell), e.g. 'November 2026'
+// youtube: the video id from its YouTube link (the part after watch?v= or youtu.be/), '' = no video
+// Turning a release on also shows it in What's new, with a blue dot for people who already use the app.
+const FEATURES = {
+    rules: { on: false, date: '', youtube: '' },   // Rules & grades (rules.js)
+    share: { on: false, date: '', youtube: '' },   // Share for review (share.js)
+    grade: { on: true }                            // Grade C to A+ (already live, part of Rules & grades)
+};
+
 // --- App State ---
 let dirHandle = null;
 let fileConnected = false;

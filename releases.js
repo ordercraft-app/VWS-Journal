@@ -6,15 +6,14 @@
 
 // ---------- The releases (newest first) ----------
 // To add a release: add an entry on top, with on() pointing to its feature switch.
-// date:    the month you switch it on, e.g. 'November 2026' (empty = no date shown)
-// youtube: the video id from the YouTube link (the part after watch?v= or youtu.be/),
-//          empty = no video button. The video only loads when someone clicks it.
+// Switch, date and YouTube id of each release live in FEATURES (globals.js).
+// The video only loads when someone clicks it.
 const RELEASES = [
     {
         id: 'share-for-review',
         on: () => typeof shareFeatureOn !== 'undefined' && shareFeatureOn,
-        date: '',
-        youtube: '',
+        date: FEATURES.share.date,
+        youtube: FEATURES.share.youtube,
         icon: 'share',
         title: 'Share for review',
         summary: 'Get your trades reviewed by your mentor or group.',
@@ -32,8 +31,8 @@ const RELEASES = [
     {
         id: 'rules-and-grades',
         on: () => typeof rulesFeatureOn !== 'undefined' && rulesFeatureOn,
-        date: '',
-        youtube: '',
+        date: FEATURES.rules.date,
+        youtube: FEATURES.rules.youtube,
         icon: 'rules',
         title: 'Rules & grades',
         summary: 'Tick off your rules on every trade and get a grade.',

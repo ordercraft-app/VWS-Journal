@@ -204,7 +204,7 @@ function gateContent(variant) {
         <details class="gate-more">
             <summary>Install as a desktop app (optional)</summary>
             <p>In Chrome, open the menu (three dots, top right), choose <strong>Cast, save and share</strong> and then <strong>Install page as app...</strong></p>
-            <img src="install-guide.png" alt="Chrome menu with Install page as app" class="gate-img">
+            <img src="install-guide.webp" alt="Chrome menu with Install page as app" class="gate-img">
         </details>`;
 }
 

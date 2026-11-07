@@ -78,13 +78,20 @@ The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHu
 | --- | --- |
 | `index.html` | The app: layout, pages and popups |
 | `styles.css` | All styling, including dark and light theme |
-| `globals.js` | Shared state and helpers |
-| `storage.js` | Reading and writing the journal folder |
+| `globals.js` | Shared state and helpers, and `FEATURES`: which releases are switched on |
+| `storage.js` | Reading and writing the journal folder: one save at a time, save errors, changes from outside, one window per journal |
 | `gate.js` | The start screen: connecting a folder, unsupported browsers and devices |
 | `tradeform.js` | The Add Trade form |
-| `ui.js` | Dashboard, weekly calendar, trade cards and settings |
+| `ui.js` | Dashboard, weekly calendar, trade cards, popups and messages |
+| `ui-settings.js` | The Settings page |
+| `share.js` | Share for review |
 | `charts.js` | Statistics page |
 | `customcharts.js` | Custom charts |
+| `rules.js` | Rules per setup and the grade: Add Trade, trade cards, setup codes |
+| `rules-settings.js` | Settings › Rules |
+| `rules-stats.js` | Stats › Rules and the rules charts |
+| `system.js` | VWS Journal system or your own system |
+| `releases.js` | What's new (the bell, top right) |
 | `app.js` | Start-up, navigation and keyboard shortcuts |
 | `settings.json` | Default settings |
 | `vendor/` | Chart.js 4.5.1 and Flatpickr 4.6.13, stored in the repo at a fixed version |

@@ -1683,3 +1683,15 @@ html.system-own .faq-codes { display: none; }
 .release-note-icon { color: var(--accent); margin-top: 1px; grid-row: span 2; }
 .release-note-link { justify-self: start; padding: 0; font-size: 12.5px; color: var(--accent); background: none; border: none; font-weight: 600; border-radius: 4px; }
 .release-note-link:hover { text-decoration: underline; }
+
+/* ---------- Toast button (Undo, Try again) ---------- */
+.toast .toast-action { margin-left: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--accent); background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 100px; }
+.toast .toast-action:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* ---------- Journal status: Not saved / Read only (storage.js) ---------- */
+.journal-status { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; font-size: 13px; font-weight: 500; border-radius: 100px; background: transparent; }
+.journal-status[hidden] { display: none; }
+.journal-status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+.journal-status-act { font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.journal-status.is-error { color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.journal-status.is-readonly { color: var(--warning, #F5A623); border: 1px solid color-mix(in srgb, var(--warning, #F5A623) 45%, transparent); background: color-mix(in srgb, var(--warning, #F5A623) 8%, transparent); }

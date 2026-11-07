@@ -174,23 +174,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    const btnResetSettings = document.getElementById('btn-reset-settings');
-    if (btnResetSettings) {
-        btnResetSettings.addEventListener('click', () => {
-            const defaultSettings = getDefaultSettings();
-            const blobSettings = new Blob([JSON.stringify(defaultSettings, null, 2)], { type: "application/json" });
-            const urlSettings = URL.createObjectURL(blobSettings);
-            const aSettings = document.createElement('a');
-            aSettings.href = urlSettings;
-            aSettings.download = 'settings.json';
-            document.body.appendChild(aSettings);
-            aSettings.click();
-            document.body.removeChild(aSettings);
-            URL.revokeObjectURL(urlSettings);
-        });
-    }
-    
-
     // From here on the gate may decide what to show (see updateConnectionGate)
     window.vwsStartupDone = true;
     try {
