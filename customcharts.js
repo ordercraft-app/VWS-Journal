@@ -662,10 +662,8 @@ function ccEnsureModal() {
         ccDirty = true;
         ccRenderPreview();
     });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && overlay.classList.contains('active')) ccClose();
-    });
 }
+let ccRelease = null; // keys and focus while the popup is open (appDialogTrap)
 
 function openCustomChartModal(id = null) {
     ccEnsureModal();
@@ -683,9 +681,9 @@ function openCustomChartModal(id = null) {
     ccRenderModal();
     document.getElementById('cc-modal').classList.add('active');
     ccDirty = false;
+    if (!ccRelease) ccRelease = appDialogTrap(document.querySelector('#cc-modal .modal-content'), { onEscape: ccClose, initialFocus: '#cc-name' });
     setTimeout(() => {
         document.getElementById('cc-modal-body').scrollTop = 0;
-        document.getElementById('cc-name').focus();
     }, 50);
 }
 
@@ -694,6 +692,7 @@ async function ccClose() {
     destroyChart('cc-preview');
     document.getElementById('cc-modal').classList.remove('active');
     ccDirty = false;
+    if (ccRelease) { const release = ccRelease; ccRelease = null; release(); }
 }
 
 function ccChange(patch) {

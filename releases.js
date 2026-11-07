@@ -218,24 +218,10 @@ function openReleaseDialog(id) {
             </div>
         </div>`;
 
+    let release = null;
     const close = () => {
-        document.removeEventListener('keydown', onKey, true);
         overlay.remove(); // also stops a playing video
-        if (previousFocus && !previousFocus.hidden && document.contains(previousFocus)) {
-            try { previousFocus.focus({ preventScroll: true }); } catch (e) {}
-        }
-    };
-    // Captures every key while open, so app shortcuts and other Esc handlers don't fire
-    const onKey = (e) => {
-        e.stopPropagation();
-        if (e.key === 'Escape') { e.preventDefault(); close(); return; }
-        if (e.key === 'Tab') {
-            const els = [...overlay.querySelectorAll('button, iframe')];
-            const i = els.indexOf(document.activeElement);
-            e.preventDefault();
-            const next = e.shiftKey ? (i <= 0 ? els.length - 1 : i - 1) : (i + 1) % els.length;
-            els[next].focus();
-        }
+        if (release) release();
     };
     overlay.addEventListener('mousedown', e => { if (e.target === overlay) close(); });
     overlay.querySelectorAll('[data-dialog="cancel"]').forEach(b => b.addEventListener('click', close));
@@ -251,8 +237,10 @@ function openReleaseDialog(id) {
     });
 
     document.body.appendChild(overlay);
-    document.addEventListener('keydown', onKey, true);
-    overlay.querySelector('[data-dialog="ok"]').focus({ preventScroll: true });
+    release = appDialogTrap(overlay.querySelector('.app-dialog'), {
+        onEscape: close, initialFocus: '[data-dialog="ok"]',
+        returnFocus: previousFocus && !previousFocus.hidden ? previousFocus : null
+    });
 }
 
 // ---------- start ----------

@@ -350,7 +350,6 @@ async function rulesRunUnlock(input, button, msg, label) {
 // Popup from the Rules tab in Add Trade ("Enter code")
 function rulesOpenUnlockDialog() {
     if (document.getElementById('app-dialog')) return;
-    const previousFocus = document.activeElement;
     const overlay = document.createElement('div');
     overlay.id = 'app-dialog';
     overlay.className = 'app-dialog-overlay';
@@ -375,12 +374,10 @@ function rulesOpenUnlockDialog() {
     const ok = overlay.querySelector('[data-dialog="ok"]');
     const msg = overlay.querySelector('.rules-unlock-msg');
     let busy = false;
+    let release = null;
     const close = () => {
-        document.removeEventListener('keydown', onKey, true);
         overlay.remove();
-        if (previousFocus && typeof previousFocus.focus === 'function' && document.contains(previousFocus)) {
-            try { previousFocus.focus({ preventScroll: true }); } catch (e) {}
-        }
+        if (release) release();
     };
     const submit = async () => {
         if (busy) return;
@@ -393,27 +390,14 @@ function rulesOpenUnlockDialog() {
         const settingsView = document.getElementById('view-settings');
         if (settingsView && settingsView.classList.contains('active') && typeof renderSettingsUI === 'function') renderSettingsUI();
     };
-    // Captures keys while open, so the app's shortcuts don't fire; typing still works
-    const onKey = (e) => {
-        e.stopPropagation();
-        if (e.key === 'Escape') { e.preventDefault(); if (!busy) close(); return; }
-        if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
-        if (e.key === 'Tab') {
-            const items = [input, ...overlay.querySelectorAll('button')].filter(el => !el.disabled);
-            const i = items.indexOf(document.activeElement);
-            e.preventDefault();
-            items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
-            return;
-        }
-        if (e.altKey || e.ctrlKey || e.metaKey) { if (!['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase())) e.preventDefault(); }
-    };
     overlay.addEventListener('mousedown', e => { if (e.target === overlay && !busy) close(); });
     overlay.querySelector('[data-dialog="cancel"]').addEventListener('click', () => { if (!busy) close(); });
     overlay.querySelector('[data-dialog="where"]').addEventListener('click', () => { if (!busy) { close(); rulesOpenCodeInfoDialog(); } });
     ok.addEventListener('click', submit);
-    document.addEventListener('keydown', onKey, true);
     document.body.appendChild(overlay);
-    input.focus();
+    release = appDialogTrap(overlay.querySelector('.app-dialog'), {
+        onEscape: () => { if (!busy) close(); }, onEnter: () => { submit(); }, initialFocus: input
+    });
 }
 
 // Small card under the rules in Add Trade when the setup's defaults are locked
@@ -500,7 +484,6 @@ function rulesBookCardHtml() {
 // "Get your VWS code": where the codes are (Discord of the Drysdale Trading Group)
 function rulesOpenCodeInfoDialog() {
     if (document.getElementById('app-dialog')) return;
-    const previousFocus = document.activeElement;
     const coreDone = rulesTier() !== 'none';
     const yes = (txt) => `<li>${RULES_ICON_CHECK}<span>${txt}</span></li>`;
     const no = (txt) => `<li class="is-no"><span class="rules-tier-dash">–</span><span>${txt}</span></li>`;
@@ -549,12 +532,10 @@ function rulesOpenCodeInfoDialog() {
     const ok = overlay.querySelector('[data-dialog="ok"]');
     const msg = overlay.querySelector('.rules-unlock-msg');
     let busy = false;
+    let release = null;
     const close = () => {
-        document.removeEventListener('keydown', onKey, true);
         overlay.remove();
-        if (previousFocus && typeof previousFocus.focus === 'function' && document.contains(previousFocus)) {
-            try { previousFocus.focus({ preventScroll: true }); } catch (e) {}
-        }
+        if (release) release();
     };
     const submit = async () => {
         if (busy) return;
@@ -567,26 +548,15 @@ function rulesOpenCodeInfoDialog() {
         const settingsView = document.getElementById('view-settings');
         if (settingsView && settingsView.classList.contains('active') && typeof renderSettingsUI === 'function') renderSettingsUI();
     };
-    // Captures keys while open, so the app's shortcuts don't fire; typing still works
-    const onKey = (e) => {
-        e.stopPropagation();
-        if (e.key === 'Escape') { e.preventDefault(); if (!busy) close(); return; }
-        if (e.key === 'Enter' && document.activeElement === input) { e.preventDefault(); submit(); return; }
-        if (e.key === 'Tab') {
-            const items = [...overlay.querySelectorAll('button, a[href], input')].filter(el => !el.disabled);
-            const i = items.indexOf(document.activeElement);
-            e.preventDefault();
-            items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length].focus();
-            return;
-        }
-        if (e.altKey || e.ctrlKey || e.metaKey) { if (!['a', 'c', 'v', 'x', 'z'].includes(e.key.toLowerCase())) e.preventDefault(); }
-    };
     overlay.addEventListener('mousedown', e => { if (e.target === overlay && !busy) close(); });
     overlay.querySelector('[data-dialog="cancel"]').addEventListener('click', () => { if (!busy) close(); });
     ok.addEventListener('click', submit);
-    document.addEventListener('keydown', onKey, true);
     document.body.appendChild(overlay);
-    input.focus();
+    release = appDialogTrap(overlay.querySelector('.app-dialog'), {
+        onEscape: () => { if (!busy) close(); },
+        onEnter: () => { if (document.activeElement !== input) return false; submit(); },
+        initialFocus: input
+    });
 }
 
 // Help: the button in the FAQ about the setup rules

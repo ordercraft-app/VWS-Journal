@@ -638,23 +638,26 @@ function revokeObjectUrls() {
     activeObjectUrls = [];
 }
 
+let imageViewerRelease = null; // keys and focus while the viewer is open (appDialogTrap)
 function openImageViewer(src) {
     enlargedImage.src = src;
     imageViewerModal.classList.add('active');
+    if (!imageViewerRelease && typeof appDialogTrap === 'function') {
+        imageViewerRelease = appDialogTrap(imageViewerModal, { onEscape: closeImageViewer, initialFocus: imageViewerClose });
+    }
+}
+
+function closeImageViewer() {
+    imageViewerModal.classList.remove('active');
+    if (imageViewerRelease) { const release = imageViewerRelease; imageViewerRelease = null; release(); }
 }
 
 function setupImageViewer() {
-    const closeViewer = () => imageViewerModal.classList.remove('active');
+    const closeViewer = closeImageViewer;
     imageViewerClose.addEventListener('click', closeViewer);
     // Click anywhere (also on the image itself) to close
     imageViewerModal.addEventListener('click', (e) => {
         if (e.target === imageViewerModal || e.target === enlargedImage) closeViewer();
     });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && imageViewerModal.classList.contains('active')) {
-            e.stopPropagation();
-            closeViewer();
-        }
-    }, true);
 }
 

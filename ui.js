@@ -687,6 +687,11 @@ async function openTradeModal(tradeId = null) {
     }
 
     tradeModal.classList.add('active');
+    if (!tradeModalRelease) {
+        tradeModalRelease = appDialogTrap(tradeModal.querySelector('.modal-content'), {
+            onEscape: () => closeModal(), passKeys: true, initialFocus: tradeModal.querySelector('.modal-content')
+        });
+    }
     setTimeout(() => { isFormDirty = false; }, 50);
     
     // Reset scroll to top AFTER modal is visible
@@ -707,7 +712,9 @@ async function closeModal() {
     }
     tradeModal.classList.remove('active');
     isFormDirty = false;
+    if (tradeModalRelease) { const release = tradeModalRelease; tradeModalRelease = null; release(); }
 }
+let tradeModalRelease = null; // keys and focus while Add / edit trade is open (appDialogTrap)
 
 tradeModal.addEventListener('mousedown', (e) => {
     if (e.target === tradeModal) {
@@ -833,6 +840,88 @@ function offerUndoDelete(trade, index) {
 }
 
 
+// --- Popups: one way of working (keys and focus) ---
+// Every popup calls appDialogTrap(box, opts) when it opens, and the function it returns when it closes:
+//  - focus moves into the popup; Tab / Shift+Tab stay inside it
+//  - Esc → opts.onEscape (the popup decides: close, or first ask when something changed)
+//  - Enter → opts.onEnter, when given (return false to let a focused button or link handle it)
+//  - the app's shortcuts behind the popup don't fire; opts.passKeys = true lets the popup's own
+//    shortcuts through (Add Trade: Alt+S, Alt+C, the rules keys 1–9)
+//  - closing puts the focus back where it was (or on opts.returnFocus)
+// Popups can stack (a question over Add Trade): only the top one gets the keys.
+const appDialogStack = [];
+const APP_DIALOG_FOCUSABLE = 'button:not([disabled]), a[href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])';
+
+function appDialogFocusables(box) {
+    return [...box.querySelectorAll(APP_DIALOG_FOCUSABLE)].filter(el => el.getClientRects().length > 0);
+}
+
+function appDialogOpen() { return appDialogStack.length > 0; }
+
+function appDialogTrap(box, opts = {}) {
+    const entry = { box, opts, back: opts.returnFocus || document.activeElement };
+    appDialogStack.push(entry);
+    let released = false;
+    if (opts.initialFocus !== false) {
+        // A popup that fades in can't take the focus in its first frame: try again until it can
+        const focusIn = () => {
+            if (released || appDialogStack.at(-1) !== entry || box.contains(document.activeElement)) return;
+            const wanted = typeof opts.initialFocus === 'string' ? box.querySelector(opts.initialFocus) : opts.initialFocus;
+            const target = wanted || appDialogFocusables(box).find(el => !el.matches('.close-btn, .rules-code-close, [data-close]')) || box;
+            if (target === box && !box.hasAttribute('tabindex')) box.setAttribute('tabindex', '-1');
+            try { target.focus({ preventScroll: true }); } catch (e) {}
+        };
+        focusIn();
+        requestAnimationFrame(() => setTimeout(focusIn, 0));
+        setTimeout(focusIn, 120);
+        setTimeout(focusIn, 350);
+    }
+    return function release() {
+        if (released) return;
+        released = true;
+        const i = appDialogStack.indexOf(entry);
+        if (i >= 0) appDialogStack.splice(i, 1);
+        const back = entry.back;
+        if (back && back !== document.body && document.contains(back) && back.getClientRects().length && typeof back.focus === 'function') {
+            try { back.focus({ preventScroll: true }); } catch (e) {}
+        }
+    };
+}
+
+// Esc, Enter and Tab for the top popup (capture: before anything else sees them)
+document.addEventListener('keydown', (e) => {
+    const top = appDialogStack.at(-1);
+    if (!top) return;
+    const { box, opts } = top;
+    if (e.key === 'Escape') {
+        if (document.querySelector('.flatpickr-calendar.open')) return; // the date picker closes first
+        e.preventDefault(); e.stopPropagation();
+        if (opts.onEscape) opts.onEscape();
+        return;
+    }
+    if (e.key === 'Tab') {
+        e.preventDefault(); e.stopPropagation();
+        const items = appDialogFocusables(box);
+        if (!items.length) { try { box.focus(); } catch (err) {} return; }
+        const i = items.indexOf(document.activeElement);
+        const next = i < 0 ? (e.shiftKey ? items.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + items.length) % items.length;
+        items[next].focus();
+        return;
+    }
+    if (e.key === 'Enter' && opts.onEnter && !e.isComposing && !(e.target && e.target.tagName === 'TEXTAREA')) {
+        if (opts.onEnter(e) !== false) { e.preventDefault(); e.stopPropagation(); }
+    }
+}, true);
+
+// The app's shortcuts listen on the document: stop keys at the body while a popup is open,
+// after the popup's own fields and buttons have had them (typing, copy and paste keep working)
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.addEventListener('keydown', (e) => {
+        const top = appDialogStack.at(-1);
+        if (top && !top.opts.passKeys) e.stopPropagation();
+    });
+});
+
 // --- App confirmation popup (replaces the browser's confirm()) ---
 // appConfirm({ title, message, confirmText, cancelText, tone, icon }) → Promise<boolean>
 // tone: 'danger' (red outline button, default) or 'primary' (blue).
@@ -851,7 +940,6 @@ function appConfirm(opts = {}) {
     const iconTone = opts.icon === 'warn' ? 'is-neutral' : tone === 'primary' ? 'is-primary' : 'is-danger';
 
     return new Promise(resolve => {
-        const previousFocus = document.activeElement;
         const overlay = document.createElement('div');
         overlay.id = 'app-dialog';
         overlay.className = 'app-dialog-overlay';
@@ -868,34 +956,20 @@ function appConfirm(opts = {}) {
                 </div>
             </div>`;
 
+        let release = null;
         const close = (result) => {
-            document.removeEventListener('keydown', onKey, true);
             overlay.remove();
-            if (previousFocus && typeof previousFocus.focus === 'function' && document.contains(previousFocus)) {
-                try { previousFocus.focus({ preventScroll: true }); } catch (e) {}
-            }
+            if (release) release();
             resolve(result);
-        };
-        // Captures every key while open, so app shortcuts and other Esc handlers don't fire
-        const onKey = (e) => {
-            e.stopPropagation();
-            if (e.key === 'Escape') { e.preventDefault(); close(false); return; }
-            if (e.key === 'Enter') { e.preventDefault(); close(true); return; }
-            if (e.key === 'Tab') {
-                const buttons = [...overlay.querySelectorAll('button')];
-                const i = buttons.indexOf(document.activeElement);
-                e.preventDefault();
-                buttons[(i + (e.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
-                return;
-            }
-            if (e.altKey || e.ctrlKey || e.metaKey || e.key.length === 1) e.preventDefault();
         };
         overlay.addEventListener('mousedown', e => { if (e.target === overlay) close(false); });
         overlay.querySelector('[data-dialog="cancel"]').addEventListener('click', () => close(false));
         overlay.querySelector('[data-dialog="ok"]').addEventListener('click', () => close(true));
-        document.addEventListener('keydown', onKey, true);
         document.body.appendChild(overlay);
-        overlay.querySelector('[data-dialog="cancel"]').focus(); // safe default for mouse users; Enter still confirms
+        // Cancel has the focus (safe default for mouse users); Enter still confirms
+        release = appDialogTrap(overlay.querySelector('.app-dialog'), {
+            onEscape: () => close(false), onEnter: () => close(true), initialFocus: '[data-dialog="cancel"]'
+        });
     });
 }
 

@@ -227,19 +227,16 @@ function openShareDialog({ title, bodyHtml, footerHtml, wide = false, onReady })
     });
     requestAnimationFrame(() => overlay.classList.add('active'));
     if (onReady) onReady(overlay);
-    const focusable = overlay.querySelector('input, button:not([data-close])');
-    if (focusable) focusable.focus();
+    overlay.shareRelease = appDialogTrap(overlay.querySelector('.share-dialog'), { onEscape: closeShareDialog });
     return overlay;
 }
 
 function closeShareDialog() {
     const old = document.getElementById('share-dialog');
-    if (old) old.remove();
+    if (!old) return;
+    old.remove();
+    if (old.shareRelease) old.shareRelease();
 }
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('share-dialog')) closeShareDialog();
-});
 
 function openPickTradesDialog(candidates, free, skippedNote) {
     const rows = candidates.map(t => `
