@@ -274,6 +274,8 @@ function migrateSettings() {
     if (typeof rulesMigrate === 'function') rulesMigrate();
     // VWS Journal system or own system (system.js)
     if (typeof systemSync === 'function') systemSync();
+    // What's new: which releases this journal has seen (releases.js)
+    if (typeof releasesMigrate === 'function') releasesMigrate();
 }
 
 async function loadDataFromFile() {
