@@ -8,7 +8,7 @@ const FEATURES = {
     share: { on: false, date: '', youtube: '' },   // Share for review (share.js)
     grade: { on: true },                           // Grade C to A+ (already live, part of Rules & grades)
     backup: { on: false, date: '', youtube: '' },  // Automatic backups (backup.js)
-    scalp: { on: false, date: '', youtube: '' }    // Scalping mode, day bar, max losses (scalp.js)
+    scalp: { on: false, date: '', youtube: '' }    // Scalping mode, day bar, max losses, multiple screenshots (scalp.js, shots.js)
 };
 
 // --- App State ---
@@ -39,6 +39,13 @@ let activeObjectUrls = [];
 let pendingImageBlob = null;
 let existingImageFilename = null;
 let imageRemoved = false;
+// All screenshot files of a trade, oldest first; the last one is trade.screenshot (shots.js)
+function tradeShotFiles(t) {
+    if (!t) return [];
+    const list = Array.isArray(t.screenshots) ? t.screenshots.filter(f => typeof f === 'string' && f) : [];
+    if (t.screenshot && !list.includes(t.screenshot)) list.push(t.screenshot);
+    return list;
+}
 
 // --- Browser Auto-Screenshot State ---
 let activeMediaStream = null;

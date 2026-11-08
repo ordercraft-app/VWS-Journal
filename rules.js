@@ -884,9 +884,11 @@ function rulesRenderPanel() {
             ${st.setup || rulesNeedsSetup() ? '<button type="button" class="btn-secondary btn-sm" data-rules-act="change">Change</button>' : ''}
         </div>`;
 
-    const hasShot = imagePreviewContainer && imagePreviewContainer.style.display !== 'none' && imagePreview && imagePreview.getAttribute('src');
-    if (hasShot) {
-        html += `<div class="rules-shot"><img src="${escapeHTML(imagePreview.src)}" alt="Trade screenshot" title="Click to enlarge" data-rules-act="enlarge"></div>`;
+    // Multiple screenshots (shots.js): the one shown next to the form
+    const shotUrl = typeof shotsActive === 'function' && shotsActive() ? shotsCurrentUrl()
+        : (imagePreviewContainer && imagePreviewContainer.style.display !== 'none' && imagePreview && imagePreview.getAttribute('src') ? imagePreview.src : null);
+    if (shotUrl) {
+        html += `<div class="rules-shot"><img src="${escapeHTML(shotUrl)}" alt="Trade screenshot" title="Click to enlarge" data-rules-act="enlarge"></div>`;
     }
 
     if (!st.setup && rulesNeedsSetup()) {
@@ -998,7 +1000,7 @@ function rulesPanelClick(e) {
         if (sec) sec.scrollIntoView({ block: 'center' });
         return;
     }
-    if (act === 'enlarge') { openImageViewer(el.src); return; }
+    if (act === 'enlarge') { if (typeof shotsActive === 'function' && shotsActive() && shotsCount() > 1) shotsEnlargeFromForm(); else openImageViewer(el.src); return; }
     if (act === 'open') { rulesForm.open = true; rulesRenderPanel(); return; }
     if (act === 'unlock') { rulesOpenUnlockDialog(); return; }
     if (act === 'getcode') { rulesOpenCodeInfoDialog(); return; }

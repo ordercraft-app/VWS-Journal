@@ -660,6 +660,7 @@ function revokeObjectUrls() {
 
 let imageViewerRelease = null; // keys and focus while the viewer is open (appDialogTrap)
 function openImageViewer(src) {
+    if (typeof shotsViewerReset === 'function') shotsViewerReset(); // shots.js adds the carousel after this
     enlargedImage.src = src;
     imageViewerModal.classList.add('active');
     if (!imageViewerRelease && typeof appDialogTrap === 'function') {
@@ -669,6 +670,7 @@ function openImageViewer(src) {
 
 function closeImageViewer() {
     imageViewerModal.classList.remove('active');
+    if (typeof shotsViewerReset === 'function') setTimeout(() => { if (!imageViewerModal.classList.contains('active')) shotsViewerReset(); }, 300);
     if (imageViewerRelease) { const release = imageViewerRelease; imageViewerRelease = null; release(); }
 }
 

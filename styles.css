@@ -1878,3 +1878,92 @@ html.scalp-on .scalp-day-bar { box-shadow: inset 0 0 0 1px color-mix(in srgb, va
 .scalp-q-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 [data-theme="light"] .scalp-q-link { color: #1e47c8; }
 .row-main:has(.scalp-col .scalp-complete) .row-col-res { width: auto; }
+
+/* ===================== Multiple screenshots per trade (shots.js) ===================== */
+/* Stage: the chart of the trade on the backdrop, left of the 700 px form. Only when there is room. */
+.shots-stage { display: none; }
+@media (min-width: 1100px) and (min-height: 560px) {
+    .shots-stage { position: absolute; left: 0; top: 0; bottom: 0; right: min(700px, 100vw); display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 32px 36px; box-sizing: border-box; min-width: 0; background: rgba(8, 9, 11, 0.62); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity .3s ease .1s; }
+}
+.modal-overlay.active .shots-stage { opacity: 1; }
+.shots-stage.is-drop { box-shadow: inset 0 0 0 3px var(--accent); }
+.shots-head { display: flex; align-items: center; gap: 12px; min-width: 0; color: #fff; }
+.shots-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shots-count { font-size: 13px; color: rgba(255,255,255,.72); white-space: nowrap; }
+.shots-count b { color: #fff; font-weight: 600; }
+.shots-enlarge { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 100px; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.35); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.shots-enlarge:hover { background: rgba(0,0,0,.55); }
+.shots-frame { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.shots-frame img { display: block; max-width: 100%; max-height: calc(100vh - 250px); object-fit: contain; border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.5); background: #0b0c0e; cursor: zoom-in; }
+.shots-missing { padding: 60px 24px; border-radius: 12px; border: 1px dashed rgba(255,255,255,.3); color: rgba(255,255,255,.75); font-size: 13px; text-align: center; }
+.shots-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.25); background: rgba(10,11,13,.7); color: #fff; cursor: pointer; }
+.shots-arrow.is-left { left: 12px; }
+.shots-arrow.is-right { right: 12px; }
+.shots-arrow:hover:not(:disabled) { background: rgba(10,11,13,.92); border-color: rgba(255,255,255,.5); }
+.shots-arrow:disabled { opacity: .3; cursor: default; }
+.shots-thumbs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.shots-thumb { width: 72px; height: 44px; padding: 0; border-radius: 7px; overflow: hidden; border: 2px solid transparent; background: #000; cursor: pointer; opacity: .62; flex: none; }
+.shots-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shots-thumb.is-on { border-color: #fff; opacity: 1; }
+.shots-thumb:hover { opacity: 1; }
+.shots-hint { margin: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.7); }
+.shots-hint .keys-kbd, .shots-empty .keys-kbd { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); color: #fff; }
+.shots-empty { align-self: center; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 32px; border-radius: 18px; border: 2px dashed rgba(255,255,255,.28); background: rgba(0,0,0,.25); color: rgba(255,255,255,.78); text-align: center; font: inherit; font-size: 13px; line-height: 1.55; cursor: pointer; }
+.shots-empty:hover { border-color: rgba(255,255,255,.5); }
+.shots-empty strong { color: #fff; font-size: 15px; }
+[data-theme="light"] .shots-stage { background: rgba(236, 238, 242, 0.75); }
+[data-theme="light"] .shots-head, [data-theme="light"] .shots-count b, [data-theme="light"] .shots-empty strong { color: var(--text-main); }
+[data-theme="light"] .shots-count, [data-theme="light"] .shots-hint { color: var(--text-muted); }
+[data-theme="light"] .shots-enlarge { background: #fff; border-color: var(--border-color); color: var(--text-main); }
+[data-theme="light"] .shots-hint .keys-kbd, [data-theme="light"] .shots-empty .keys-kbd { background: var(--bg-input); border-color: var(--border-color); color: var(--text-main); }
+[data-theme="light"] .shots-thumb.is-on { border-color: var(--accent); }
+[data-theme="light"] .shots-empty { border-color: var(--border-hover); background: rgba(255,255,255,.7); color: var(--text-muted); }
+[data-theme="light"] .shots-missing { border-color: var(--border-hover); color: var(--text-muted); }
+/* Strip in the form */
+.shots-strip { display: flex; flex-wrap: wrap; gap: 12px; padding: 12px; border-radius: 14px; background: var(--bg-panel); border: 1px solid var(--border-color); }
+.shots-strip:empty { display: none; }
+.shots-chip { position: relative; }
+.shots-chip-img { position: relative; display: block; width: 116px; height: 72px; padding: 0; border-radius: 8px; overflow: hidden; border: 2px solid transparent; background: #000; cursor: pointer; }
+.shots-chip.is-on .shots-chip-img { border-color: var(--accent); }
+.shots-chip-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shots-chip-n { position: absolute; left: 5px; top: 5px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 5px; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.shots-chip-tag { position: absolute; left: 5px; bottom: 5px; padding: 1px 6px; border-radius: 5px; background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; }
+.shots-chip-x { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-muted); font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.shots-chip-x:hover { color: var(--text-main); border-color: var(--border-hover); }
+.shots-add { width: 116px; height: 72px; border-radius: 8px; border: 1.5px dashed var(--border-hover); background: transparent; color: var(--text-muted); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.shots-add small { font-size: 10.5px; font-weight: 500; }
+.shots-add:hover { border-color: var(--accent); color: var(--text-main); }
+.shots-full { align-self: center; }
+/* Image viewer as a carousel: the parts lie over the viewer, clicks next to them still close it */
+#shots-viewer { position: absolute; inset: 0; pointer-events: none; }
+#shots-viewer button { pointer-events: auto; }
+#image-viewer-modal.shots-viewing #enlarged-image { max-width: calc(100vw - 180px); max-height: calc(100vh - 170px); margin-bottom: 70px; }
+.shots-varrow { position: absolute; top: calc(50% - 35px); transform: translateY(-50%); width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.3); background: rgba(20,21,24,.6); color: #fff; cursor: pointer; }
+.shots-varrow.is-left { left: 24px; }
+.shots-varrow.is-right { right: 24px; }
+.shots-varrow:hover:not(:disabled) { background: rgba(20,21,24,.9); border-color: rgba(255,255,255,.55); }
+.shots-varrow:disabled { opacity: .25; cursor: default; }
+.shots-vfoot { position: absolute; left: 0; right: 0; bottom: 22px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.shots-vcap { color: rgba(255,255,255,.85); font-size: 13px; }
+.shots-vthumbs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: calc(100vw - 40px); }
+/* Cards and rows: how many screenshots */
+.shots-card-badge { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 100px; background: rgba(0,0,0,.7); color: #fff; font-size: 11.5px; font-weight: 700; pointer-events: none; }
+.shots-row-wrap { position: relative; flex-shrink: 0; display: block; width: 40px; height: 40px; }
+.shots-row-wrap .row-thumb { display: block; }
+.shots-row-badge { position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 100px; border: 2px solid var(--bg-panel); background: #3a3d44; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+[data-theme="light"] .shots-row-badge { background: #5c6068; }
+/* Quick trade with several captures */
+.scalp-q-thumbs { display: inline-flex; align-items: center; gap: 6px; }
+.scalp-q-more { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) { .shots-stage { transition: none; } }
+/* Tablet / small laptop: list rows shrink the setup and location columns, so the result, grade
+   and Complete trade stay visible (they were pushed out of the row below about 900 px) */
+@media (max-width: 1100px) {
+    .trades-table { min-width: 560px; } /* below that the list scrolls sideways, as before */
+    .trade-row .row-main { gap: 12px !important; }
+    .row-col-setup { width: auto; flex: 1 1 0; min-width: 90px; }
+    .row-col-loc { flex: 1 1 0; min-width: 0; }
+}
+@media (max-width: 860px) {
+    .scalp-col { width: auto; margin-right: 0; }
+}

@@ -189,6 +189,7 @@ function scalpAfterDashboard() {
     scalpApply();
     scalpDayBar();
     scalpDecorateTrades();
+    if (typeof shotsDecorate === 'function') shotsDecorate(); // multiple screenshots (shots.js)
     const first = document.getElementById('btn-add-first-trade');
     if (first && scalpModeOn()) {
         const b = first.cloneNode(false); b.innerHTML = `${SCALP_ICONS.bolt}Quick trade`; b.classList.add('scalp-first');
@@ -242,7 +243,7 @@ async function scalpAfterSave(trade) {
 }
 
 // ---------- Quick trade popup ----------
-let scalpQ = null; // { id, date, number, symbol, direction, setup, setupCategory, result, rules, broken:Set, from, shotBlob, shotUrl }
+let scalpQ = null; // { id, date, number, symbol, direction, setup, setupCategory, result, rules, broken:Set, from, shots: [{ blob, url }] }
 function scalpPrevious(date) {
     const day = appData.trades.filter(t => t.date === date).sort((a, b) => (parseInt(b.number, 10) || 0) - (parseInt(a.number, 10) || 0));
     if (day[0]) return day[0];
@@ -260,7 +261,7 @@ function scalpQuickInit(symbol, from) {
     if (sym && !syms.includes(sym)) sym = '';
     if (!sym && syms.length === 1) sym = syms[0];
     scalpQ = { id: crypto.randomUUID(), date, number: scalpNumber(date), symbol: sym, direction: '', setup: '', setupCategory: '', result: '',
-        rules: null, broken: new Set(), from: from !== undefined ? from : (p && sym && p.symbol === sym ? p.number : null), shotBlob: null, shotUrl: '' };
+        rules: null, broken: new Set(), from: from !== undefined ? from : (p && sym && p.symbol === sym ? p.number : null), shots: [] };
 }
 function scalpQuickMissing() {
     const q = scalpQ, s = appData.settings, miss = [];
@@ -277,7 +278,14 @@ function scalpCaptureState() {
 }
 function scalpQuickShotHtml() {
     const q = scalpQ, c = scalpCaptureState();
-    if (q.shotUrl) return `<div class="scalp-q-shot has-shot"><img class="scalp-q-shot-img" src="${q.shotUrl}" alt="Screenshot for trade ${q.number}"><span><strong>Screenshot added</strong></span>${c.supported ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Capture again ${scalpKbd('C')}</button>` : ''}<button type="button" class="scalp-q-link" data-scalp-shot-remove>Remove</button></div>`;
+    // Several screenshots per trade (shots.js): C adds one more, Remove takes the latest away
+    const n = q.shots.length;
+    if (n) {
+        const shown = q.shots.slice(-3);
+        const thumbs = shown.map((s, i) => `<img class="scalp-q-shot-img" src="${s.url}" alt="Screenshot ${n - shown.length + i + 1} for trade ${q.number}">`).join('');
+        const full = n >= (typeof SHOTS_MAX !== 'undefined' ? SHOTS_MAX : 10);
+        return `<div class="scalp-q-shot has-shot"><span class="scalp-q-thumbs">${thumbs}${n > 3 ? `<span class="scalp-q-more">+${n - 3}</span>` : ''}</span><span><strong>${n === 1 ? 'Screenshot added' : `${n} screenshots`}</strong></span>${c.supported && !full ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Add another ${scalpKbd('C')}</button>` : ''}<button type="button" class="scalp-q-link" data-scalp-shot-remove>${n > 1 ? 'Remove last' : 'Remove'}</button></div>`;
+    }
     const btn = c.connected ? `<button type="button" class="btn-primary btn-sm scalp-q-capture" data-scalp-capture>Auto-Capture ${scalpKbd('C', true)}</button>`
         : c.supported ? `<button type="button" class="btn-secondary btn-sm scalp-q-capture" data-scalp-capture>Connect window ${scalpKbd('C')}</button>` : '';
     return `<div class="scalp-q-shot">${SCALP_ICONS.img}<span>Screenshot <span class="scalp-q-note">optional</span></span>${btn}<span class="scalp-q-or">${btn ? 'or paste' : 'Paste'} ${scalpKbd(scalpCtrl())} ${scalpKbd('V')}</span></div>`;
@@ -328,7 +336,7 @@ function scalpQuickOpen() {
     document.body.appendChild(ov);
     const box = ov.querySelector('.scalp-q-dialog');
     let release = null;
-    const close = () => { if (scalpQ && scalpQ.shotUrl) URL.revokeObjectURL(scalpQ.shotUrl); scalpQ = null; ov.remove(); if (release) release(); };
+    const close = () => { if (scalpQ) scalpQ.shots.forEach(s => URL.revokeObjectURL(s.url)); scalpQ = null; ov.remove(); if (release) release(); };
     ov.addEventListener('mousedown', e => { if (e.target === ov) close(); });
     ov.addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b || !scalpQ) return;
@@ -344,7 +352,7 @@ function scalpQuickOpen() {
         if (b.dataset.scalpRules) { q.rules = q.rules === b.dataset.scalpRules ? null : b.dataset.scalpRules; if (q.rules !== 'broken') q.broken.clear(); return scalpQuickRender(); }
         if (b.dataset.scalpBroke) { q.broken.has(b.dataset.scalpBroke) ? q.broken.delete(b.dataset.scalpBroke) : q.broken.add(b.dataset.scalpBroke); return scalpQuickRender(); }
         if (b.dataset.scalpCapture !== undefined) return scalpQuickCapture();
-        if (b.dataset.scalpShotRemove !== undefined) { if (q.shotUrl) URL.revokeObjectURL(q.shotUrl); q.shotBlob = null; q.shotUrl = ''; return scalpQuickRender(); }
+        if (b.dataset.scalpShotRemove !== undefined) { const s = q.shots.pop(); if (s) URL.revokeObjectURL(s.url); return scalpQuickRender(); }
         if (b.dataset.scalpSave) return scalpQuickSave(b.dataset.scalpSave === 'close', close);
         if (b.dataset.scalpFull !== undefined) return scalpQuickFull(close);
     });
@@ -385,9 +393,11 @@ async function scalpQuickSetShot(fileOrBlob) {
     try {
         const blob = await compressImage(fileOrBlob);
         if (!scalpQ || !blob) return;
-        if (scalpQ.shotUrl) URL.revokeObjectURL(scalpQ.shotUrl);
-        scalpQ.shotBlob = blob; scalpQ.shotUrl = URL.createObjectURL(blob);
+        const max = typeof SHOTS_MAX !== 'undefined' ? SHOTS_MAX : 10;
+        if (scalpQ.shots.length >= max) { showToast(`A trade holds up to ${max} screenshots. Remove one to add another.`, 'error'); return false; }
+        scalpQ.shots.push({ blob, url: URL.createObjectURL(blob) });
         scalpQuickRender();
+        return true;
     } catch (e) { console.error(e); showToast('Could not read that image', 'error'); }
 }
 let scalpCapturing = false;
@@ -400,8 +410,8 @@ async function scalpQuickCapture() {
         const canvas = await captureConnectedWindow();
         const blob = await new Promise(r => canvas.toBlob(r, 'image/webp', 0.9));
         if (!blob) throw new Error('Could not create the image');
-        await scalpQuickSetShot(blob);
-        if (scalpQ) showToast('Screenshot captured!', 'success');
+        const added = await scalpQuickSetShot(blob);
+        if (scalpQ && added) showToast(scalpQ.shots.length > 1 ? `Screenshot ${scalpQ.shots.length} captured!` : 'Screenshot captured!', 'success');
     } catch (e) {
         console.error('Auto-Capture failed:', e);
         showToast(`Capture failed: ${e.message}`, 'error');
@@ -411,12 +421,17 @@ async function scalpQuickSave(andClose, close) {
     const q = scalpQ;
     if (!q || q.saving || scalpQuickMissing().length) return;
     q.saving = true;
-    let screenshot = null;
-    try {
-        if (q.shotBlob) { screenshot = `trade_${q.id}_${Date.now()}.webp`; await saveImageToDir(q.shotBlob, screenshot); }
-    } catch (e) { console.error(e); screenshot = null; showToast('The screenshot could not be saved; the trade is saved without it.', 'error'); }
+    const names = [];
+    let failed = 0;
+    for (let k = 0; k < q.shots.length; k++) {
+        const name = `trade_${q.id}_${Date.now()}${k ? `_${k}` : ''}.webp`;
+        try { await saveImageToDir(q.shots[k].blob, name); names.push(name); } catch (e) { console.error(e); failed++; }
+    }
+    if (failed) showToast(failed === q.shots.length && failed === 1 ? 'The screenshot could not be saved; the trade is saved without it.' : `${failed} screenshot${failed === 1 ? '' : 's'} could not be saved; the trade is saved without ${failed === 1 ? 'it' : 'them'}.`, 'error');
+    const screenshot = names.length ? names[names.length - 1] : null;
     const t = { id: q.id, date: q.date, number: String(q.number), result: q.result, symbol: q.symbol, locations: [], marketCondition: '', setup: q.setup, setupCategory: q.setup ? (q.setupCategory || (typeof tfFindSetupCategory === 'function' ? tfFindSetupCategory(q.setup) : '')) : '',
         direction: q.direction, evidences: [], invalidations: [], target: '', targetSub1: '', targetSub2: '', psychology: [], notes: '', screenshot, quick: true };
+    if (names.length > 1) t.screenshots = names;
     if (q.rules && scalpRulesOn() && typeof rulesForSetup === 'function') {
         t.ruleChecks = rulesForSetup(q.setup).map(r => ({ id: r.id, phase: r.phase, key: r.key, detail: r.detail, ok: q.rules === 'ok' ? true : !q.broken.has(r.id) }));
     }
@@ -426,20 +441,20 @@ async function scalpQuickSave(andClose, close) {
     showToast(`Trade ${t.number} saved · ${SCALP_RESULT_LABEL[t.result]}`, 'success');
     if (andClose || !scalpQ) return close();
     // Next trade: only the symbol stays
-    if (q.shotUrl) URL.revokeObjectURL(q.shotUrl);
+    q.shots.forEach(s => URL.revokeObjectURL(s.url));
     scalpQuickInit(t.symbol, t.number);
     scalpQuickRender();
 }
 async function scalpQuickFull(close) {
     const q = scalpQ; if (!q) return;
-    const keep = { symbol: q.symbol, direction: q.direction, setup: q.setup, setupCategory: q.setupCategory, result: q.result }, blob = q.shotBlob;
+    const keep = { symbol: q.symbol, direction: q.direction, setup: q.setup, setupCategory: q.setupCategory, result: q.result }, blobs = q.shots.map(s => s.blob);
     close();
     await openTradeModal(null);
     if (tfState) {
         Object.keys(keep).forEach(k => { if (keep[k]) tfState[k] = keep[k]; });
         tfRenderAll(); tfUpdateSaveState();
     }
-    if (blob) await handleImageFile(new File([blob], `quick_${Date.now()}.webp`, { type: 'image/webp' }));
+    for (const blob of blobs) await handleImageFile(new File([blob], `quick_${Date.now()}.webp`, { type: 'image/webp' }));
 }
 
 // ---------- Settings › Journal: Daily limit ----------

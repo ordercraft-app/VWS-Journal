@@ -17,7 +17,7 @@ Private by design: no account, no subscription, no cloud. Your journal lives in 
 - **Rules per setup.** Every setup has a short list of rules (context, location, entry, risk). Tick them off when you log a trade, and see on the Stats page how often you follow them and which rule you break most. The default rules for the setups unlock with a VWS code, shared in the Discord of the Drysdale Trading Group: free members get the core setups, premium members core and advanced. The rules for all setups and your own rules always work.
 - **Scalping mode.** Many trades in a day? Switch from **Normal** to **Scalp** at the bottom of the sidebar. **Quick trade** logs a trade in seconds: symbol (from your previous trade), direction, setup and result, with an optional Auto-Capture screenshot (key C). Click **Complete trade** later to add the market condition, location and the rest.
 - **Day bar and a loss limit.** Above the trades of the day: every trade in order, wins and losses, and the quick trades still to complete. Set **Max losses per day** in Settings > Journal and get a calm message when you reach it.
-- **Chart screenshots.** Paste, drop or upload a screenshot, or connect your charting window once and capture it with one click (**Auto-Capture**, also with Option/Alt + A).
+- **Chart screenshots.** Paste, drop or upload a screenshot, or connect your charting window once and capture it with one click (**Auto-Capture**, also with Option/Alt + A). With scalping mode on, a trade holds up to 10 screenshots: the latest shows large next to the form while you fill it in, and the enlarged view is a carousel.
 - **Weekly calendar.** See wins, losses and break-evens per day at a glance and jump between days and weeks.
 - **Card and list view.** Full trade cards with the screenshot, or a compact list you can expand per trade.
 - **Track your progress.** Built-in charts, such as execution growth, setup effectiveness, invalidation losses and psychology, by day, symbol, market condition, location and setup. Filter by year, month, week or day.
@@ -104,6 +104,7 @@ The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHu
 | `system.js` | VWS Journal system or your own system |
 | `backup.js` | Automatic daily backups, restore, and protection against a damaged journal file |
 | `scalp.js` | Scalping mode (Quick trade, Complete trade), the day bar and the max losses per day |
+| `shots.js` | Multiple screenshots per trade: the latest next to the form, the thumbnails in the form, the carousel viewer (released with scalping mode) |
 | `releases.js` | What's new (the bell, top right) |
 | `app.js` | Start-up, navigation and keyboard shortcuts |
 | `settings.json` | Default settings |

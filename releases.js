@@ -21,7 +21,7 @@ const RELEASES = [
         intro: 'Many trades in a day? Switch to Scalp at the bottom of the sidebar and log each trade in a few seconds. Add the details when the market is closed.',
         points: [
             ['zap', 'Quick trade', 'Symbol, direction, setup and result. Enter saves and starts the next one.'],
-            ['camera', 'Auto-Capture with C', 'A screenshot of your chart window in one key, or paste one.'],
+            ['camera', 'Auto-Capture with C, as often as you like', 'Several screenshots per trade. The latest shows next to the form while you complete it.'],
             ['check', 'Complete trade later', 'Add market condition, location and notes when you have time.'],
             ['bar', 'Day bar and a loss limit', 'All trades of the day at a glance, and a calm message at your max losses.']
         ],

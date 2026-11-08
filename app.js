@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const imgTarget = e.target.closest('.trade-img-trigger');
         if (imgTarget) {
             e.stopPropagation();
+            // A trade with several screenshots opens the carousel (shots.js)
+            if (typeof shotsOpenTrade === 'function' && shotsOpenTrade(imgTarget)) return;
             openImageViewer(imgTarget.dataset.imgUrl);
             return;
         }
@@ -110,6 +112,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (e.code === 'KeyA' && typeof scalpCaptureShortcut === 'function' && scalpFeatureOn) {
                     e.preventDefault();
                     scalpCaptureShortcut();
+                    return;
+                }
+                // Alt ← / Alt →: previous / next screenshot next to the form (shots.js); not while typing
+                if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && !isInputFocused && typeof shotsActive === 'function' && shotsActive()) {
+                    e.preventDefault();
+                    shotsGo(e.code === 'ArrowLeft' ? -1 : 1);
                     return;
                 }
                 if (e.code === 'Backspace' || e.key === 'Backspace') {
@@ -343,6 +351,9 @@ function keysGroups() {
     // Scalping mode release (scalp.js): Auto-Capture key, and the Quick trade keys while Scalp is on
     if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
         groups[2].rows.splice(2, 0, ['Capture the chart', [A, 'A'], 'Auto-Capture; connects the window the first time']);
+        // Multiple screenshots (shots.js)
+        groups[2].rows.splice(3, 0, ['Previous / next screenshot', [A, '←', '|', '→'], 'when you are not typing']);
+        groups[0].rows.splice(3, 0, ['Previous / next enlarged screenshot', ['←', '|', '→']]);
         if (typeof scalpModeOn === 'function' && scalpModeOn()) groups.push({ id: 'quick', title: 'Quick trade', note: 'scalping mode', rows: [
             ['Long / Short', ['↑', '|', '↓']],
             ['Setup 1 to 9', ['1', '–', '9'], 'in the order of Settings'],

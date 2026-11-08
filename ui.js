@@ -2,8 +2,12 @@
 
 function setupImageUploadEvents() {
     imageDropzone.addEventListener('click', () => tImageInput.click());
-    tImageInput.addEventListener('change', (e) => {
-        if(e.target.files && e.target.files[0]) handleImageFile(e.target.files[0]);
+    tImageInput.addEventListener('change', async (e) => {
+        // Several at once with multiple screenshots (shots.js), in the order picked
+        const files = [...(e.target.files || [])].filter(f => f.type.startsWith('image/'));
+        const take = typeof shotsActive === 'function' && shotsActive() ? files : files.slice(0, 1);
+        for (const f of take) await handleImageFile(f);
+        tImageInput.value = '';
     });
 
     imageDropzone.addEventListener('dragover', (e) => {
@@ -14,10 +18,11 @@ function setupImageUploadEvents() {
     imageDropzone.addEventListener('drop', (e) => {
         e.preventDefault();
         imageDropzone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const file = e.dataTransfer.files[0];
-            if(file.type.startsWith('image/')) handleImageFile(file);
-        }
+        const files = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => f.type.startsWith('image/'));
+        (async () => {
+            const take = typeof shotsActive === 'function' && shotsActive() ? files : files.slice(0, 1);
+            for (const f of take) await handleImageFile(f);
+        })();
     });
 
     tradeModal.addEventListener('paste', (e) => {
@@ -75,6 +80,8 @@ async function compressImage(file) {
 async function handleImageFile(file) {
     try {
         const compressedBlob = await compressImage(file);
+        // Multiple screenshots (shots.js): every image is added to the trade
+        if (typeof shotsActive === 'function' && shotsActive()) { shotsAdd(compressedBlob); return; }
         pendingImageBlob = compressedBlob;
         imageRemoved = false;
         const url = URL.createObjectURL(compressedBlob);
@@ -437,7 +444,7 @@ async function renderDashboard() {
             row.dataset.tradeId = trade.id;
             
             let rowImageHtml = imageUrl 
-                ? `<img src="${imageUrl}" class="row-thumb trade-img-trigger" data-img-url="${imageUrl}">`
+                ? `<img src="${imageUrl}" class="row-thumb trade-img-trigger" data-img-url="${imageUrl}" alt="Screenshot">`
                 : `<div class="row-no-thumb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></div>`;
             
             row.innerHTML = `
@@ -653,6 +660,9 @@ async function openTradeModal(tradeId = null) {
         document.getElementById('t-notes').value = '';
     }
 
+    // Multiple screenshots (shots.js): the latest next to the form, the strip in the form
+    if (typeof shotsFormOpened === 'function') await shotsFormOpened(tradeId ? appData.trades.find(t => t.id === tradeId) : null);
+
     if(!appData.settings.features) appData.settings.features = {evidence:true, invalidation:true, target:true, psychology:true};
     document.getElementById('section-evidence').style.display = appData.settings.features.evidence ? 'block' : 'none';
     document.getElementById('section-invalidation').style.display = appData.settings.features.invalidation ? 'block' : 'none';
@@ -720,6 +730,7 @@ async function closeModal() {
     isFormDirty = false;
     if (tradeModalRelease) { const release = tradeModalRelease; tradeModalRelease = null; release(); }
     if (typeof scalpFormClosed === 'function') scalpFormClosed();
+    if (typeof shotsFormClosed === 'function') shotsFormClosed();
 }
 let tradeModalRelease = null; // keys and focus while Add / edit trade is open (appDialogTrap)
 
@@ -746,23 +757,36 @@ btnSaveTrade.addEventListener('click', async (e) => {
 
     const tradeId = document.getElementById('trade-id').value || crypto.randomUUID();
     
-    let finalImageName = existingImageFilename;
-
-    if (imageRemoved && existingImageFilename) {
-        await deleteImageFromDir(existingImageFilename);
-        finalImageName = null;
-    }
-
-    if (pendingImageBlob) {
-        if (existingImageFilename && !imageRemoved) {
-             await deleteImageFromDir(existingImageFilename); 
-        }
-        finalImageName = `trade_${tradeId}_${Date.now()}.webp`;
-        await saveImageToDir(pendingImageBlob, finalImageName);
-    }
-    
     // Reviews come from shared links; editing the trade must not drop them
     const previousTrade = appData.trades.find(t => t.id === tradeId);
+
+    let finalImageName = existingImageFilename, shotList;
+    if (typeof shotsActive === 'function' && shotsActive()) {
+        // Multiple screenshots (shots.js)
+        const r = await shotsSave(tradeId);
+        finalImageName = r.screenshot; shotList = r.screenshots;
+    } else {
+        if (imageRemoved && existingImageFilename) {
+            await deleteImageFromDir(existingImageFilename);
+            finalImageName = null;
+        }
+
+        if (pendingImageBlob) {
+            if (existingImageFilename && !imageRemoved) {
+                 await deleteImageFromDir(existingImageFilename); 
+            }
+            finalImageName = `trade_${tradeId}_${Date.now()}.webp`;
+            await saveImageToDir(pendingImageBlob, finalImageName);
+        }
+        // A trade with several screenshots (made with the feature on): the form above works on the
+        // latest one; the older ones stay
+        if (previousTrade && Array.isArray(previousTrade.screenshots)) {
+            const older = tradeShotFiles(previousTrade).filter(f => f !== previousTrade.screenshot);
+            const all = finalImageName ? [...older, finalImageName] : older;
+            finalImageName = all.length ? all[all.length - 1] : null;
+            shotList = all.length > 1 ? all : undefined;
+        }
+    }
 
     const tradeData = {
         id: tradeId,
@@ -771,6 +795,7 @@ btnSaveTrade.addEventListener('click', async (e) => {
         ...tfGetData(),
         notes: document.getElementById('t-notes').value,
         screenshot: finalImageName,
+        screenshots: shotList,
         reviews: previousTrade && Array.isArray(previousTrade.reviews) ? previousTrade.reviews : undefined,
         // Rule check (rules.js); without the feature an existing copy is kept as is
         ruleChecks: typeof rulesGetTradeChecks === 'function' ? rulesGetTradeChecks(previousTrade) : (previousTrade ? previousTrade.ruleChecks : undefined)
@@ -802,7 +827,7 @@ btnDeleteTrade.addEventListener('click', async (e) => {
     const what = trade ? [trade.number ? `Trade ${trade.number}` : 'This trade', trade.symbol, trade.setup].filter(Boolean).join(' · ') + (d ? ` (${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})` : '') : 'This trade';
     const ok = await appConfirm({
         title: 'Delete this trade?',
-        message: `${what}${trade && trade.screenshot ? ' and its screenshot are' : ' is'} removed from your journal. You can undo this for a few seconds.`,
+        message: `${what}${tradeShotFiles(trade).length > 1 ? ` and its ${tradeShotFiles(trade).length} screenshots are` : tradeShotFiles(trade).length ? ' and its screenshot are' : ' is'} removed from your journal. You can undo this for a few seconds.`,
         confirmText: 'Delete trade', icon: 'trash'
     });
     if (ok) {
@@ -824,7 +849,7 @@ function offerUndoDelete(trade, index) {
         if (done || undone) return;
         done = true;
         window.removeEventListener('pagehide', removeShot);
-        if (trade.screenshot && !appData.trades.some(t => t.screenshot === trade.screenshot)) deleteImageFromDir(trade.screenshot);
+        tradeShotFiles(trade).forEach(f => { if (!appData.trades.some(t => tradeShotFiles(t).includes(f))) deleteImageFromDir(f); });
     };
     const timer = setTimeout(removeShot, UNDO_DELETE_MS);
     window.addEventListener('pagehide', removeShot);
