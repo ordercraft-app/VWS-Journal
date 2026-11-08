@@ -7,7 +7,7 @@
 // ---------- The releases (newest first) ----------
 // To add a release: add an entry on top, with on() pointing to its feature switch.
 // Switch, date and YouTube id of each release live in FEATURES (globals.js).
-// The video only loads when someone clicks it.
+// A release with a video shows it embedded in its popup (YouTube privacy-enhanced mode); it loads only when that popup opens.
 const RELEASES = [
     {
         id: 'scalping-mode',
@@ -241,9 +241,11 @@ function openReleaseDialog(id) {
     overlay.innerHTML = `
         <div class="app-dialog release-dialog" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title">
             <button type="button" class="rules-code-close" data-dialog="cancel" aria-label="Close">&times;</button>
-            <div class="release-hero">
-                <img src="${r.image}" alt="">
-                ${r.youtube ? `<button type="button" class="release-play" data-dialog="play">${RELEASE_ICONS.play}Watch the video</button>` : ''}
+            <div class="release-hero${r.youtube ? ' is-playing' : ''}">
+                ${r.youtube
+                    // The video is embedded right away (privacy-enhanced mode: no cookies until it plays); without one, the picture
+                    ? `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(r.youtube)}?rel=0" title="${releaseText(r.title)} video" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+                    : `<img src="${r.image}" alt="">`}
             </div>
             <div class="app-dialog-copy">
                 <span class="release-kicker"><span class="release-kicker-dot"></span>${r.date ? `New · ${releaseText(r.date)}` : 'New release'}</span>
@@ -270,13 +272,6 @@ function openReleaseDialog(id) {
     overlay.querySelector('[data-dialog="ok"]').addEventListener('click', () => { close(); r.go(); });
     const code = overlay.querySelector('[data-dialog="code"]');
     if (code) code.addEventListener('click', () => { close(); rulesOpenCodeInfoDialog(); });
-    const play = overlay.querySelector('[data-dialog="play"]');
-    if (play) play.addEventListener('click', () => {
-        // Only now does anything load from YouTube (privacy-enhanced mode, no cookies until it plays)
-        const hero = overlay.querySelector('.release-hero');
-        hero.classList.add('is-playing');
-        hero.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(r.youtube)}?autoplay=1&rel=0" title="${releaseText(r.title)} video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
-    });
 
     document.body.appendChild(overlay);
     release = appDialogTrap(overlay.querySelector('.app-dialog'), {

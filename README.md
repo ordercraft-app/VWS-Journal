@@ -83,7 +83,7 @@ Day and week shortcuts work on the dashboard when you are not typing in a field.
 
 ## Project structure
 
-The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHub Pages. There is no build step and nothing is loaded from other websites at runtime, apart from privacy-friendly Cloudflare Web Analytics and, only when you click to play one, a release video from YouTube (privacy-enhanced mode).
+The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHub Pages. There is no build step and nothing is loaded from other websites at runtime, apart from privacy-friendly Cloudflare Web Analytics and, only when you open a release in What's new that has one, its video from YouTube (privacy-enhanced mode).
 
 | File | Purpose |
 | --- | --- |

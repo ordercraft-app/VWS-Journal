@@ -8,7 +8,7 @@ const FEATURES = {
     share: { on: false, date: '', youtube: '' },   // Share for review (share.js)
     grade: { on: true },                           // Grade C to A+ (already live, part of Rules & grades)
     backup: { on: false, date: '', youtube: '' },  // Automatic backups (backup.js)
-    scalp: { on: true, date: 'November 2026', youtube: '' }    // Scalping mode, day bar, max losses, multiple screenshots (scalp.js, shots.js)
+    scalp: { on: true, date: 'November 2026', youtube: 'u2_p9fE5zF8' }    // Scalping mode, day bar, max losses, multiple screenshots (scalp.js, shots.js)
 };
 
 // --- App State ---

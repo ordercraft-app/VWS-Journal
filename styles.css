@@ -1670,8 +1670,6 @@ html.system-own .faq-codes { display: none; }
 .release-hero.is-playing { height: auto; aspect-ratio: 16 / 9; padding: 0; background: #000; }
 .release-hero.is-playing::after { display: none; }
 .release-hero iframe { width: 100%; height: 100%; border: 0; display: block; }
-.release-play { position: absolute; left: 16px; bottom: 14px; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 100px; font-size: 12px; font-weight: 600; color: #fff; background: rgba(10,12,16,.72); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(6px); }
-.release-play:hover { background: rgba(10,12,16,.9); }
 .release-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; }
 .release-kicker-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .release-dialog .app-dialog-copy h2 { font-size: 20px; }
