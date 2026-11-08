@@ -145,9 +145,10 @@ function tfUpdateSaveState() {
     const missing = tfMissing();
     if (btn) {
         btn.disabled = missing.length > 0;
-        btn.title = missing.length ? `Still needed: ${missing.map(f => TF_REQUIRED_LABELS[f]).join(', ')}` : '';
+        btn.title = missing.length ? `Still needed: ${missing.map(f => TF_REQUIRED_LABELS[f]).join(', ')}` : (typeof keysAlt === 'function' ? `Save trade (${keysAlt()} S)` : '');
     }
     if (hint) hint.textContent = missing.length ? `Still needed: ${missing.map(f => TF_REQUIRED_LABELS[f]).join(', ')}` : '';
+    if (typeof scalpSyncSaveNext === 'function') scalpSyncSaveNext(); // Save & next (scalp.js)
 }
 
 // Highlights what's missing (used when Alt+S is pressed too early)

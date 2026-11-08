@@ -106,6 +106,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('btn-cancel-modal').click();
                     return;
                 }
+                // Alt A: Auto-Capture the chart window, or connect it first (scalp.js release)
+                if (e.code === 'KeyA' && typeof scalpCaptureShortcut === 'function' && scalpFeatureOn) {
+                    e.preventDefault();
+                    scalpCaptureShortcut();
+                    return;
+                }
                 if (e.code === 'Backspace' || e.key === 'Backspace') {
                     e.preventDefault();
                     const btnDel = document.getElementById('btn-delete-trade');
@@ -334,11 +340,24 @@ function keysGroups() {
             ['Delete trade', [A, 'Backspace'], 'when you edit a trade'],
         ] },
     ];
+    // Scalping mode release (scalp.js): Auto-Capture key, and the Quick trade keys while Scalp is on
+    if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
+        groups[2].rows.splice(2, 0, ['Capture the chart', [A, 'A'], 'Auto-Capture; connects the window the first time']);
+        if (typeof scalpModeOn === 'function' && scalpModeOn()) groups.push({ id: 'quick', title: 'Quick trade', note: 'scalping mode', rows: [
+            ['Long / Short', ['↑', '|', '↓']],
+            ['Win / Loss / Break-even', ['W', '|', 'L', '|', 'B']],
+            ['Capture the chart', [A, 'A']],
+            ['Paste a screenshot', [A === 'Option' ? 'Cmd' : 'Ctrl', 'V']],
+            ['Save & next trade', ['Enter']],
+            ['Save & close', ['Shift', 'Enter']],
+        ] });
+    }
     if (typeof rulesFeatureOn !== 'undefined' && rulesFeatureOn) groups[2].rows.push(['Mark rule 1 to 9', ['1', '–', '9'], 'followed → not followed → open']);
     return groups;
 }
 
 function keysWhere() {
+    if (document.getElementById('scalp-q-dialog')) return 'quick';
     if (document.getElementById('trade-modal').classList.contains('active')) return 'trade';
     if (document.getElementById('view-dashboard').classList.contains('active')) return 'dashboard';
     return 'all';
@@ -403,5 +422,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const b = document.getElementById(id);
         if (b) b.title = `${label} (${A} ${key})`;
     });
+    if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
+        [['btn-auto-screenshot', 'Auto-Capture'], ['btn-connect-window', 'Connect the chart window']].forEach(([id, label]) => {
+            const b = document.getElementById(id);
+            if (b) b.title = `${label} (${A} A)`;
+        });
+    }
 });
 

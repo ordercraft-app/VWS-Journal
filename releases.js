@@ -10,6 +10,25 @@
 // The video only loads when someone clicks it.
 const RELEASES = [
     {
+        id: 'scalping-mode',
+        on: () => typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn,
+        date: FEATURES.scalp ? FEATURES.scalp.date : '',
+        youtube: FEATURES.scalp ? FEATURES.scalp.youtube : '',
+        icon: 'bolt',
+        title: 'Scalping mode',
+        summary: 'Log a trade in seconds on busy days. Complete it later.',
+        image: 'releases/scalping-mode.webp',
+        intro: 'Many trades in a day? Switch to Scalp at the bottom of the sidebar and log each trade in a few seconds. Add the details when the market is closed.',
+        points: [
+            ['zap', 'Quick trade', 'Symbol, direction, setup and result. Enter saves and starts the next one.'],
+            ['camera', 'Auto-Capture with Alt A', 'A screenshot of your chart window in one key, or paste one.'],
+            ['check', 'Complete trade later', 'Add market condition, location and notes when you have time.'],
+            ['bar', 'Day bar and a loss limit', 'All trades of the day at a glance, and a calm message at your max losses.']
+        ],
+        cta: 'Switch to Scalp',
+        go: () => { if (typeof scalpSet === 'function') scalpSet(true, true); }
+    },
+    {
         id: 'automatic-backups',
         on: () => typeof backupFeatureOn !== 'undefined' && backupFeatureOn,
         date: FEATURES.backup ? FEATURES.backup.date : '',
@@ -86,6 +105,9 @@ const RELEASE_ICONS = {
     eye: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
     msg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     key: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+    bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z"/></svg>',
+    zap: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z"/></svg>',
+    camera: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
     play: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>'
 };
 

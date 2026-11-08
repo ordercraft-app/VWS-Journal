@@ -7,7 +7,8 @@ const FEATURES = {
     rules: { on: false, date: '', youtube: '' },   // Rules & grades (rules.js)
     share: { on: false, date: '', youtube: '' },   // Share for review (share.js)
     grade: { on: true },                           // Grade C to A+ (already live, part of Rules & grades)
-    backup: { on: false, date: '', youtube: '' }   // Automatic backups (backup.js)
+    backup: { on: false, date: '', youtube: '' },  // Automatic backups (backup.js)
+    scalp: { on: false, date: '', youtube: '' }    // Scalping mode, day bar, max losses (scalp.js)
 };
 
 // --- App State ---

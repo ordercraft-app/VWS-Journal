@@ -442,6 +442,8 @@ function renderSettingsContent() {
         settingsContainer.appendChild(renderComplexSetting('Target', appData.settings.target, '3-level', onSettingsChange, 'target'));
         
         settingsContainer.appendChild(renderSimpleSetting('Psychology', appData.settings.psychology, onSettingsChange, 'psychology'));
+        // Max losses per day (scalp.js), only while that release is on
+        if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn && typeof scalpSettingsEl === 'function') settingsContainer.appendChild(scalpSettingsEl());
 
                 
 

@@ -367,7 +367,7 @@ async function renderDashboard() {
     
     // No folder (or no permission yet): the connection popup locks the app
     updateConnectionGate();
-    if (!dirHandle || !fileConnected) return;
+    if (!dirHandle || !fileConnected) { if (typeof scalpAfterDashboard === 'function') scalpAfterDashboard(); return; }
 
     const selectedDate = datePicker.value;
     const tradesForDate = appData.trades.filter(t => t.date === selectedDate);
@@ -383,6 +383,7 @@ async function renderDashboard() {
             openTradeModal();
         });
         if (tradesAnimation) animateItems(tradesList.children, tradesAnimation);
+        if (typeof scalpAfterDashboard === 'function') scalpAfterDashboard(); // scalp.js: day bar off, Quick trade button
         return;
     }
 
@@ -593,6 +594,8 @@ async function renderDashboard() {
     }
     
     tradesList.appendChild(fragment);
+    // Scalping mode (scalp.js): day bar, Complete trade, fixed badge places
+    if (typeof scalpAfterDashboard === 'function') scalpAfterDashboard();
 
     if (tradesAnimation) {
         const items = [];
@@ -604,7 +607,8 @@ async function renderDashboard() {
 
 // --- Trade Modal Dynamic Dropdowns (Elements instead of IDs) ---
 
-btnNewTrade.addEventListener('click', () => openTradeModal());
+// In scalping mode (scalp.js) the button opens the Quick trade popup instead
+btnNewTrade.addEventListener('click', () => { if (typeof scalpNewTrade === 'function' && scalpNewTrade()) return; openTradeModal(); });
 btnCloseModal.addEventListener('click', closeModal);
 btnCancelModal.addEventListener('click', closeModal);
 
@@ -693,6 +697,8 @@ async function openTradeModal(tradeId = null) {
         });
     }
     setTimeout(() => { isFormDirty = false; }, 50);
+    // Scalping mode (scalp.js): max losses message, Save & next
+    if (typeof scalpFormOpened === 'function') scalpFormOpened(tradeId);
     
     // Reset scroll to top AFTER modal is visible
     setTimeout(() => {
@@ -713,6 +719,7 @@ async function closeModal() {
     tradeModal.classList.remove('active');
     isFormDirty = false;
     if (tradeModalRelease) { const release = tradeModalRelease; tradeModalRelease = null; release(); }
+    if (typeof scalpFormClosed === 'function') scalpFormClosed();
 }
 let tradeModalRelease = null; // keys and focus while Add / edit trade is open (appDialogTrap)
 
@@ -783,6 +790,8 @@ btnSaveTrade.addEventListener('click', async (e) => {
     await renderDashboard();
     
     await autoSave();
+    // Save & next in scalping mode (scalp.js): the next trade starts with the same symbol
+    if (typeof scalpAfterSave === 'function') scalpAfterSave(tradeData);
 });
 
 btnDeleteTrade.addEventListener('click', async (e) => {
