@@ -52,11 +52,19 @@
         "creator": { "@type": "Organization", "name": "Order Craft", "url": "https://marketplace.elgato.com/@ordercraft" }
     }
     </script>
-    <link rel="stylesheet" href="styles.css?v=2026-11-08f">
-    <link rel="stylesheet" href="landing.css?v=2026-11-08f">
+    <link rel="stylesheet" href="styles.css?v=2026-11-08h">
+    <link rel="stylesheet" href="landing.css?v=2026-11-08h">
     <script>
         // Returning users: hide the welcome page before the first paint (gate.js decides for real)
-        try { if (localStorage.getItem('vws-has-journal') === '1') document.documentElement.classList.add('has-journal'); } catch (e) {}
+        // ?landing=on / ?landing=off: always show the welcome page in this browser, also with a journal (for checking the page)
+        try {
+            const q = new URLSearchParams(location.search), lp = (q.get('landing') || '').toLowerCase();
+            if (lp === 'on') localStorage.setItem('vws-landing-preview', '1');
+            if (lp === 'off') localStorage.removeItem('vws-landing-preview');
+            if (lp === 'on' || lp === 'off') { q.delete('landing'); const r = q.toString(); history.replaceState(null, '', location.pathname + (r ? '?' + r : '') + location.hash); }
+            if (localStorage.getItem('vws-landing-preview') === '1') document.documentElement.classList.add('lp-preview');
+            else if (localStorage.getItem('vws-has-journal') === '1') document.documentElement.classList.add('has-journal');
+        } catch (e) {}
     </script>
     
         <!-- Libraries are stored in this repo (vendor/), at a fixed version, so nothing
@@ -89,14 +97,15 @@
             <section class="lp-hero lp-wrap">
                 <p class="lp-pill"><span aria-hidden="true"></span>Free trading journal</p>
                 <h1>The journal built for learning <span class="lp-accent">your favourite trading system</span>.</h1>
-                <p class="lp-lead">Log every trade with your system context: market condition, location, setup, evidence and psychology. Check the rules of your setup, and track your progress.</p>
+                <p class="lp-lead">Log every trade with your system context: market condition, location, setup, evidence and psychology. <span class="lp-rules">Check the rules of your setup, and track your progress.</span><span class="lp-norules">Then track your progress.</span></p>
                 <a class="lp-btn lp-btn-primary lp-btn-lg" href="#lp-start" data-lp-scroll>Get started</a>
                 <p class="lp-small">No account. Your trades stay on your computer. Works in Chrome and Edge on desktop.</p>
             </section>
 
             <div class="lp-hero-shot lp-wrap">
                 <div class="lp-hero-frame">
-<img src="landing/dashboard.webp" width="2000" height="1250" alt="The journal dashboard: a weekly calendar with wins and losses per day, and trade cards with chart, location, setup, evidence, psychology, grade and rules" fetchpriority="high">
+<img class="lp-noscalp" src="landing/dashboard.webp" width="2000" height="1250" alt="The journal dashboard: a weekly calendar with wins and losses per day, and trade cards with chart, location, setup, evidence, psychology and grade" fetchpriority="high">
+<img class="lp-scalp" src="landing/dashboard-scalp.webp" width="2000" height="1250" alt="The journal dashboard: a weekly calendar, the day bar with every trade of the day in order, Normal or Scalp mode in the sidebar, and trade cards with chart, location, setup, evidence, psychology and grade" loading="lazy">
                 </div>
             </div>
 
@@ -117,7 +126,7 @@
                         <li><span class="lp-chip lp-chip-opt">Target <span class="lp-toggle is-on" aria-hidden="true"></span><span class="lp-sr">optional, on</span></span></li>
                         <li><span class="lp-chip lp-chip-opt is-off"><s>Psychology</s> <span class="lp-toggle" aria-hidden="true"></span><span class="lp-sr">optional, off</span></span></li>
                     </ol>
-                    <ol class="lp-flow-group lp-flow-rules" aria-label="Checked per trade">
+                    <ol class="lp-flow-group lp-flow-rules lp-rules" aria-label="Checked per trade">
                         <li><span class="lp-chip lp-chip-check">Rules <span class="lp-mini-score" aria-hidden="true">5/6</span></span></li>
                     </ol>
                 </div>
@@ -125,7 +134,7 @@
                     <span><span class="lp-key" aria-hidden="true"></span>Always part of a trade</span>
                     <span><span class="lp-key lp-key-opt" aria-hidden="true"></span>Optional: switch it off in Settings if you don't use it</span>
                     <span><span class="lp-mini-grade" aria-hidden="true">A+</span>Grade from your locations, automatic</span>
-                    <span><span class="lp-key lp-key-check" aria-hidden="true"></span>Rules of your setup, ticked off per trade</span>
+                    <span class="lp-rules"><span class="lp-key lp-key-check" aria-hidden="true"></span>Rules of your setup, ticked off per trade</span>
                 </div>
             </section>
 
@@ -133,17 +142,18 @@
                 <article class="lp-tile lp-span-2">
                     <span class="lp-tag">Log a trade in seconds</span>
                     <h3>Log every trade with its system context</h3>
-                    <p>Market condition, location, setup, direction, evidence, invalidation, target and psychology, with one click each. Then tick off the rules of your setup. Every trade gets a grade from its locations.</p>
+                    <p>Market condition, location, setup, direction, evidence, invalidation, target and psychology, with one click each. <span class="lp-rules">Then tick off the rules of your setup. </span>Every trade gets a grade from its locations.</p>
                     <div class="lp-visual lp-v-context" aria-hidden="true">
                         <img class="lp-v-form" src="landing/form-location.webp" width="800" height="252" alt="" loading="lazy">
                         <img class="lp-v-setup" src="landing/block-setup.webp" width="300" height="298" alt="" loading="lazy">
-                        <img class="lp-v-rules-mini" src="landing/rules-list.webp" width="1310" height="982" alt="" loading="lazy">
+                        <img class="lp-v-rules-mini lp-rules" src="landing/rules-list.webp" width="1310" height="982" alt="" loading="lazy">
                     </div>
                 </article>
                 <article class="lp-tile lp-tile-chart">
                     <span class="lp-tag">One-click screenshot</span>
                     <h3>Easily add a screenshot to every trade</h3>
-                    <p>Connect your charting window once. After that, one click captures your chart and adds it to the trade. Pasting, dropping or uploading a screenshot works too.</p>
+                    <p class="lp-noscalp">Connect your charting window once. After that, one click captures your chart and adds it to the trade. Pasting, dropping or uploading a screenshot works too.</p>
+                    <p class="lp-scalp">Connect your charting window once. After that, press C or click once to capture your chart. Add as many as you like: a trade holds up to 10 screenshots. Pasting, dropping or uploading works too.</p>
                     <div class="lp-visual lp-v-chart" aria-hidden="true">
                         <img src="landing/trade-chart.webp" width="612" height="572" alt="" loading="lazy">
                         <div class="lp-capture-toast">
@@ -158,16 +168,24 @@
                         </div>
                     </div>
                 </article>
-                <article class="lp-tile lp-tile-grade">
-                    <span class="lp-tag">Grade C to A+</span>
-                    <h3>Every trade gets a grade</h3>
-                    <p>The more locations line up, the higher the grade. A higher-timeframe level adds a plus. Nothing extra to fill in.</p>
-                    <div class="lp-visual lp-v-grade" aria-hidden="true">
-                        <span class="lp-grades"><span class="lp-g-a">A+</span><span class="lp-g-a">A</span><span class="lp-g-b">B+</span><span class="lp-g-b">B</span><span class="lp-g-c">C+</span><span class="lp-g-c">C</span></span>
-                        <img src="landing/location-grade.webp" width="1302" height="482" alt="" loading="lazy">
+                <article class="lp-tile lp-tile-quick lp-scalp">
+                    <span class="lp-tag lp-tag-scalp">Scalping mode</span>
+                    <h3>Many trades a day? Log them with a few keys</h3>
+                    <p>Switch to Scalp and Quick trade asks only for symbol, direction, setup and result. Press C to capture your chart, Enter to log the next trade.</p>
+                    <div class="lp-visual lp-v-quick" aria-hidden="true">
+                        <img src="landing/quick-trade.webp" width="900" height="762" alt="" loading="lazy">
                     </div>
                 </article>
-                <article class="lp-tile lp-span-2">
+                <article class="lp-tile lp-span-2 lp-tile-complete lp-scalp">
+                    <span class="lp-tag lp-tag-scalp">Complete later</span>
+                    <h3>Add the details when the market is quiet</h3>
+                    <p>Quick trades wait with a Complete trade button, and the day bar shows how many are still open. Your chart shows large next to the form while you add the market condition, location and the rest.</p>
+                    <div class="lp-visual lp-v-complete" aria-hidden="true">
+                        <img class="lp-v-cform" src="landing/complete-trade.webp" width="1440" height="620" alt="" loading="lazy">
+                        <img class="lp-v-daybar" src="landing/day-bar.webp" width="1200" height="126" alt="" loading="lazy">
+                    </div>
+                </article>
+                <article class="lp-tile lp-span-2 lp-tile-rules lp-rules">
                     <span class="lp-tag">Rules per setup</span>
                     <h3>Check if you followed your rules</h3>
                     <p>Every setup has a short list of rules: context, location, entry and risk. Tick them off when you log the trade and see which rule you break most.</p>
@@ -175,15 +193,13 @@
                         <img src="landing/rules-list.webp" width="1310" height="982" alt="" loading="lazy">
                     </div>
                 </article>
-                <article class="lp-tile lp-span-2">
-                    <span class="lp-tag">Add custom charts</span>
-                    <h3>Track your progress</h3>
-                    <p>Built-in charts show how well you apply your system: execution growth, results, setups, win rate by grade, and how often you follow your rules. Add your own custom charts for any question.</p>
-                    <div class="lp-visual lp-v-progress" aria-hidden="true">
-                        <img class="lp-v-growth" src="landing/chart-discipline.webp" width="1300" height="266" alt="" loading="lazy">
-                        <img class="lp-v-winloss" src="landing/chart-winloss.webp" width="600" height="510" alt="" loading="lazy">
-                        <img class="lp-v-day" src="landing/chart-by-day.webp" width="600" height="510" alt="" loading="lazy">
-                        <img class="lp-v-setups" src="landing/chart-setups.webp" width="600" height="373" alt="" loading="lazy">
+                <article class="lp-tile lp-tile-grade">
+                    <span class="lp-tag">Grade C to A+</span>
+                    <h3>Every trade gets a grade</h3>
+                    <p>The more locations line up, the higher the grade. A higher-timeframe level adds a plus. Nothing extra to fill in.</p>
+                    <div class="lp-visual lp-v-grade" aria-hidden="true">
+                        <span class="lp-grades"><span class="lp-g-a">A+</span><span class="lp-g-a">A</span><span class="lp-g-b">B+</span><span class="lp-g-b">B</span><span class="lp-g-c">C+</span><span class="lp-g-c">C</span></span>
+                        <img src="landing/location-grade.webp" width="1302" height="482" alt="" loading="lazy">
                     </div>
                 </article>
                 <article class="lp-tile">
@@ -195,6 +211,29 @@
                         <img class="lp-v-set-b" src="landing/settings-setup.webp" width="1100" height="480" alt="" loading="lazy">
                     </div>
                 </article>
+                <article class="lp-tile lp-span-2">
+                    <span class="lp-tag">Add custom charts</span>
+                    <h3>Track your progress</h3>
+                    <p>Built-in charts show how well you apply your system: execution growth, results, setups<span class="lp-rules">, win rate by grade, and how often you follow your rules</span><span class="lp-norules"> and win rate by grade</span>. Add your own custom charts for any question.</p>
+                    <div class="lp-visual lp-v-progress" aria-hidden="true">
+                        <img class="lp-v-growth lp-rules" src="landing/chart-discipline.webp" width="1300" height="266" alt="" loading="lazy">
+                        <img class="lp-v-growth lp-norules" src="landing/chart-growth.webp" width="1200" height="246" alt="" loading="lazy">
+                        <img class="lp-v-winloss" src="landing/chart-winloss.webp" width="600" height="510" alt="" loading="lazy">
+                        <img class="lp-v-day" src="landing/chart-by-day.webp" width="600" height="510" alt="" loading="lazy">
+                        <img class="lp-v-setups" src="landing/chart-setups.webp" width="600" height="373" alt="" loading="lazy">
+                    </div>
+                </article>
+                <article class="lp-tile lp-span-2">
+                    <span class="lp-tag">Weekly calendar</span>
+                    <h3>Your week at a glance</h3>
+                    <p class="lp-noscalp">Wins, losses and break-evens per day, and every trade of the day as a card with its chart, context<span class="lp-rules">, grade and rules</span><span class="lp-norules"> and grade</span>.</p>
+                    <p class="lp-scalp">Wins, losses and break-evens per day, a day bar with every trade in order, and each trade as a card with its chart, context<span class="lp-rules">, grade and rules</span><span class="lp-norules"> and grade</span>.</p>
+                    <div class="lp-visual lp-v-week" aria-hidden="true">
+                        <img src="landing/calendar.webp" width="1300" height="96" alt="" loading="lazy">
+                        <img class="lp-rules" src="landing/trade-card-rules.webp" width="1300" height="457" alt="" loading="lazy">
+                        <img class="lp-norules" src="landing/trade-card-grade.webp" width="1300" height="382" alt="" loading="lazy">
+                    </div>
+                </article>
                 <article class="lp-tile lp-tile-private">
                     <span class="lp-tag">No account, no cloud</span>
                     <h3>Private by design</h3>
@@ -204,15 +243,6 @@
                         <li><code>settings.json</code><span>Your lists</span></li>
                         <li><code>img/</code><span>Your screenshots</span></li>
                     </ul>
-                </article>
-                <article class="lp-tile lp-span-2">
-                    <span class="lp-tag">Weekly calendar</span>
-                    <h3>Your week at a glance</h3>
-                    <p>Wins, losses and break-evens per day, and every trade of the day as a card with its chart, context, grade and rules.</p>
-                    <div class="lp-visual lp-v-week" aria-hidden="true">
-                        <img src="landing/calendar.webp" width="1300" height="96" alt="" loading="lazy">
-                        <img src="landing/trade-card-rules.webp" width="1300" height="457" alt="" loading="lazy">
-                    </div>
                 </article>
             </section>
 
@@ -294,7 +324,11 @@
                     <summary><span>Which browsers can I use?</span><svg class="lp-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></summary>
                     <div class="lp-faq-answer"><p>Google Chrome or Microsoft Edge on a desktop or laptop. Safari, Firefox and phones cannot open a folder on your computer.</p></div>
                 </details>
-                <details class="lp-faq-item">
+                <details class="lp-faq-item lp-scalp">
+                    <summary><span>I take many trades a day. Is logging fast enough?</span><svg class="lp-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></summary>
+                    <div class="lp-faq-answer"><p>Yes. Switch to Scalp at the bottom of the sidebar: Quick trade logs the symbol, direction, setup and result with a few keys, and C captures your chart. Complete the trades later, when the market is quiet. You can also set a maximum number of losses per day; the journal then shows a calm reminder, it never blocks you.</p></div>
+                </details>
+                <details class="lp-faq-item lp-rules">
                     <summary><span>Can I check if I followed my rules?</span><svg class="lp-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg></summary>
                     <div class="lp-faq-answer"><p>Yes. Every setup has a short list of rules (context, location, entry, risk). You tick them off when you log a trade, and the Stats page shows which rules you break most and how your results change when you follow them. You can edit the rules in Settings.</p></div>
                 </details>
@@ -1044,24 +1078,24 @@
     </div>
 
     <!-- ?v=: raised with every update, so browsers load the new files instead of a cached mix -->
-    <script defer src="globals.js?v=2026-11-08f"></script>
-    <script defer src="storage.js?v=2026-11-08f"></script>
-    <script defer src="ui.js?v=2026-11-08f"></script>
-    <script defer src="ui-settings.js?v=2026-11-08f"></script>
-    <script defer src="tradeform.js?v=2026-11-08f"></script>
-    <script defer src="share.js?v=2026-11-08f"></script>
-    <script defer src="customcharts.js?v=2026-11-08f"></script>
-    <script defer src="gate.js?v=2026-11-08f"></script>
-    <script defer src="charts.js?v=2026-11-08f"></script>
-    <script defer src="rules.js?v=2026-11-08f"></script>
-    <script defer src="rules-settings.js?v=2026-11-08f"></script>
-    <script defer src="rules-stats.js?v=2026-11-08f"></script>
-    <script defer src="system.js?v=2026-11-08f"></script>
-    <script defer src="backup.js?v=2026-11-08f"></script>
-    <script defer src="scalp.js?v=2026-11-08f"></script>
-    <script defer src="shots.js?v=2026-11-08f"></script>
-    <script defer src="releases.js?v=2026-11-08f"></script>
-    <script defer src="app.js?v=2026-11-08f"></script>
+    <script defer src="globals.js?v=2026-11-08h"></script>
+    <script defer src="storage.js?v=2026-11-08h"></script>
+    <script defer src="ui.js?v=2026-11-08h"></script>
+    <script defer src="ui-settings.js?v=2026-11-08h"></script>
+    <script defer src="tradeform.js?v=2026-11-08h"></script>
+    <script defer src="share.js?v=2026-11-08h"></script>
+    <script defer src="customcharts.js?v=2026-11-08h"></script>
+    <script defer src="gate.js?v=2026-11-08h"></script>
+    <script defer src="charts.js?v=2026-11-08h"></script>
+    <script defer src="rules.js?v=2026-11-08h"></script>
+    <script defer src="rules-settings.js?v=2026-11-08h"></script>
+    <script defer src="rules-stats.js?v=2026-11-08h"></script>
+    <script defer src="system.js?v=2026-11-08h"></script>
+    <script defer src="backup.js?v=2026-11-08h"></script>
+    <script defer src="scalp.js?v=2026-11-08h"></script>
+    <script defer src="shots.js?v=2026-11-08h"></script>
+    <script defer src="releases.js?v=2026-11-08h"></script>
+    <script defer src="app.js?v=2026-11-08h"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>
     <!-- End Cloudflare Web Analytics -->

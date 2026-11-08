@@ -64,6 +64,12 @@ function bindLanding() {
     const mail = document.getElementById('landing-mail');
     if (mail) mail.href = gateMailLink();
     setupLandingReveal(landing);
+    if (isLandingPreview()) {
+        const pill = document.createElement('div');
+        pill.className = 'lp-preview-pill';
+        pill.innerHTML = 'Welcome page preview <a href="./?landing=off">Back to my journal</a>';
+        landing.appendChild(pill);
+    }
 }
 
 // Sections fade in on load and while scrolling, like the views in the app
@@ -110,10 +116,17 @@ function isMobileDevice() {
     return false;
 }
 
+// ?landing=on (index.html head): the welcome page stays open in this browser, also with a journal; ?landing=off ends it
+function isLandingPreview() { return document.documentElement.classList.contains('lp-preview'); }
+
 function updateConnectionGate() {
     // Returning user: wait until the saved folder has been checked, so the welcome page doesn't flash
     if (!window.vwsStartupDone && document.documentElement.classList.contains('has-journal')) return;
     const mobile = isMobileDevice();
+    if (isLandingPreview()) {
+        hideConnectionGate();
+        return showLanding(mobile ? 'mobile' : (!gateSupported() ? 'unsupported' : 'new'));
+    }
     if (!mobile && !!dirHandle && fileConnected) {
         // Journal open: no welcome page, no popup. Short title for the tab / installed app window.
         if (!window.vwsSeoTitle) window.vwsSeoTitle = document.title;

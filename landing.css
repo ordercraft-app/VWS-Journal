@@ -159,6 +159,27 @@
 
 .lp-v-week { display: flex; flex-direction: column; gap: 16px; }
 
+/* Scalping mode release (FEATURES.scalp): the .lp-scalp parts show once html.scalp-feature is set (scalp.js),
+   the .lp-noscalp parts are what the page shows until then. */
+html:not(.scalp-feature) .lp-scalp, html.scalp-feature .lp-noscalp { display: none !important; }
+/* ?landing=on: small label while the welcome page is shown on purpose (only for checking the page) */
+.lp-preview-pill { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 16px; border-radius: 100px; background: rgba(18, 20, 26, 0.94); border: 1px solid var(--lp-line-strong); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); font-size: 13px; color: var(--lp-muted); white-space: nowrap; }
+.lp-preview-pill a { padding: 6px 12px; border-radius: 100px; background: var(--lp-accent); color: #ffffff; font-weight: 600; text-decoration: none; }
+
+/* Rules release (FEATURES.rules / ?rules=on): the rules parts show with html.rules-on (rules.js),
+   the .lp-norules parts until then. Without the Rules tile the Grade tile takes the full row. */
+html:not(.rules-on) .lp-rules, html.rules-on .lp-norules { display: none !important; }
+html:not(.rules-on) .lp-tile-grade { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); grid-template-rows: auto auto 1fr; column-gap: 48px; min-height: 0; }
+html:not(.rules-on) .lp-tile-grade > :not(.lp-visual) { grid-column: 1; justify-self: start; }
+html:not(.rules-on) .lp-tile-grade .lp-visual { grid-column: 2; grid-row: 1 / span 3; margin: 0 -32px -32px 0; padding: 4px 0 0; }
+html:not(.rules-on) .lp-tile-grade .lp-visual img { width: 112%; }
+.lp-tag-scalp { background: rgba(124, 58, 237, 0.16); border-color: rgba(139, 92, 246, 0.5); color: #c4b0ff; }
+.lp-v-quick { margin: 0 -96px -150px 0; }
+.lp-v-quick img { display: block; width: 100%; max-width: 440px; height: auto; transform: rotate(-3deg); transform-origin: 0 0; margin-left: 6px; }
+.lp-v-complete { min-height: 300px; }
+.lp-v-complete .lp-v-cform { display: block; width: 100%; height: auto; transform: rotate(-1.5deg); margin: 52px 0 -70px; }
+.lp-v-complete .lp-v-daybar { position: absolute; left: -10px; top: 22px; width: 74%; max-width: 560px; height: auto; transform: rotate(2deg); border: 1px solid rgba(139, 92, 246, 0.45); }
+
 /* Three steps */
 .lp-start { display: flex; flex-direction: column; gap: 40px; padding-bottom: clamp(72px, 10vw, 104px); scroll-margin-top: 80px; }
 .lp-three { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
@@ -256,6 +277,14 @@ details[open] > summary .lp-chev { transform: rotate(180deg); }
     .lp-v-settings { margin-right: -110px; }
     .lp-v-settings .lp-v-set-a { display: none; }
     .lp-v-settings .lp-v-set-b { margin: 0; transform: rotate(-3deg); }
+    /* Quick trade spans the row, so the narrow tiles still pair up */
+    .lp-tile-quick { grid-column: 1 / -1; }
+    /* Without the Rules tile the Grade tile is a normal narrow tile again, so the narrow tiles pair up */
+    html:not(.rules-on) .lp-tile-grade { display: flex; grid-column: auto; min-height: 400px; }
+    html:not(.rules-on) .lp-tile-grade .lp-visual { margin: auto 0 0; padding-top: 28px; }
+    html:not(.rules-on) .lp-tile-grade .lp-visual img { width: 150%; }
+    .lp-v-quick { margin: 0 0 -170px; }
+    .lp-v-quick img { max-width: 520px; margin-left: auto; margin-right: 8%; }
     .lp-three { gap: 24px; }
     .lp-launch-panel { grid-template-columns: 1fr; }
     .lp-picker { max-width: 420px; }
@@ -297,6 +326,12 @@ details[open] > summary .lp-chev { transform: rotate(180deg); }
     .lp-v-progress { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .lp-v-progress .lp-v-setups { grid-column: 1 / -1; }
     .lp-v-settings { margin-right: -90px; }
+    html:not(.rules-on) .lp-tile-grade { grid-column: auto; min-height: 0; }
+    .lp-v-quick { margin: 0 -60px -110px 0; }
+    .lp-v-quick img { max-width: 360px; margin: 0 0 0 4px; }
+    .lp-v-complete { min-height: 0; }
+    .lp-v-complete .lp-v-cform { width: 150%; max-width: none; margin: 30px 0 -40px; }
+    .lp-v-complete .lp-v-daybar { width: 92%; left: -6px; }
     .lp-files li { font-size: 12px; padding: 11px 12px; }
     .lp-three { grid-template-columns: 1fr; gap: 28px; }
     .lp-num { font-size: 36px; }
