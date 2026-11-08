@@ -135,7 +135,7 @@ function shotsStage() {
     }
     const n = shotsSt.items.length, A = typeof keysAlt === 'function' ? keysAlt() : 'Alt';
     if (!n) {
-        st.innerHTML = `<button type="button" class="shots-empty" data-shots-add>${SHOTS_I.img}<strong>The chart of this trade shows here</strong><span>Paste a screenshot (${shotsKbd(A === 'Option' ? 'Cmd' : 'Ctrl')} ${shotsKbd('V')}), drop it here or use Auto-Capture (${shotsKbd(A)} ${shotsKbd('A')}). Add as many as you like.</span></button>`;
+        st.innerHTML = `<button type="button" class="shots-empty" data-shots-add>${SHOTS_I.img}<strong>The chart of this trade shows here</strong><span>Paste a screenshot (${shotsKbd(A === 'Option' ? 'Cmd' : 'Ctrl')} ${shotsKbd('V')}), drop it here or use Auto-Capture (${shotsKbd('C')}). Add as many as you like.</span></button>`;
         return;
     }
     const at = shotsSt.at, it = shotsSt.items[at], latest = at === n - 1;

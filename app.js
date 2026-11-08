@@ -77,6 +77,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isModalOpen = document.getElementById('trade-modal').classList.contains('active');
         const isDashboardOpen = document.getElementById('view-dashboard').classList.contains('active');
 
+        // C in the trade form: Auto-Capture the chart window, or connect it first; same key as Quick trade
+        // (scalp.js release; not while typing, so a C in a text field stays a C)
+        if (isModalOpen && !isInputFocused && !e.altKey && !e.ctrlKey && !e.metaKey && !e.repeat && (e.key === 'c' || e.key === 'C')
+            && typeof scalpCaptureShortcut === 'function' && scalpFeatureOn) {
+            e.preventDefault();
+            scalpCaptureShortcut();
+            return;
+        }
+
         // Alt/Option combinations
         if (e.altKey) {
             if (e.code === 'KeyN') {
@@ -106,12 +115,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (e.code === 'KeyC') {
                     e.preventDefault();
                     document.getElementById('btn-cancel-modal').click();
-                    return;
-                }
-                // Alt A: Auto-Capture the chart window, or connect it first (scalp.js release)
-                if (e.code === 'KeyA' && typeof scalpCaptureShortcut === 'function' && scalpFeatureOn) {
-                    e.preventDefault();
-                    scalpCaptureShortcut();
                     return;
                 }
                 // Alt ← / Alt →: previous / next screenshot next to the form (shots.js); not while typing
@@ -350,7 +353,7 @@ function keysGroups() {
     ];
     // Scalping mode release (scalp.js): Auto-Capture key, and the Quick trade keys while Scalp is on
     if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
-        groups[2].rows.splice(2, 0, ['Capture the chart', [A, 'A'], 'Auto-Capture; connects the window the first time']);
+        groups[2].rows.splice(2, 0, ['Capture the chart', ['C'], 'Auto-Capture; when you are not typing']);
         // Multiple screenshots (shots.js)
         groups[2].rows.splice(3, 0, ['Previous / next screenshot', [A, '←', '|', '→'], 'when you are not typing']);
         groups[0].rows.splice(3, 0, ['Previous / next enlarged screenshot', ['←', '|', '→']]);
@@ -437,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
         [['btn-auto-screenshot', 'Auto-Capture'], ['btn-connect-window', 'Connect the chart window']].forEach(([id, label]) => {
             const b = document.getElementById(id);
-            if (b) b.title = `${label} (${A} A)`;
+            if (b) b.title = `${label} (C)`;
         });
     }
 });

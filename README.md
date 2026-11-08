@@ -16,8 +16,8 @@ Private by design: no account, no subscription, no cloud. Your journal lives in 
 - **Trade grade.** Every trade gets a grade from C to A+, based on the number of locations (confluences) and whether one is a higher-timeframe level. See how each grade performs on the Stats page.
 - **Rules per setup.** Every setup has a short list of rules (context, location, entry, risk). Tick them off when you log a trade, and see on the Stats page how often you follow them and which rule you break most. The default rules for the setups unlock with a VWS code, shared in the Discord of the Drysdale Trading Group: free members get the core setups, premium members core and advanced. The rules for all setups and your own rules always work.
 - **Scalping mode.** Many trades in a day? Switch from **Normal** to **Scalp** at the bottom of the sidebar. **Quick trade** logs a trade in seconds: symbol (from your previous trade), direction, setup and result, with an optional Auto-Capture screenshot (key C). Click **Complete trade** later to add the market condition, location and the rest.
-- **Day bar and a loss limit.** Above the trades of the day: every trade in order, wins and losses, and the quick trades still to complete. Set **Max losses per day** at the top of Settings > Journal (“Show max losses per day message”) and get a calm message when you reach it.
-- **Chart screenshots.** Paste, drop or upload a screenshot, or connect your charting window once and capture it with one click (**Auto-Capture**, also with Option/Alt + A). With scalping mode on, a trade holds up to 10 screenshots: the latest shows large next to the form while you fill it in, and the enlarged view is a carousel.
+- **Day bar and a loss limit.** Above the trades of the day: every trade in order (click one to open it), wins and losses, and the quick trades still to complete. Set **Max losses per day** at the top of Settings > Journal (“Show max losses per day message”) and get a calm message when you reach it.
+- **Chart screenshots.** Paste, drop or upload a screenshot, or connect your charting window once and capture it with one click (**Auto-Capture**, also with the C key). With scalping mode on, a trade holds up to 10 screenshots: the latest shows large next to the form while you fill it in, and the enlarged view is a carousel.
 - **Weekly calendar.** See wins, losses and break-evens per day at a glance and jump between days and weeks.
 - **Card and list view.** Full trade cards with the screenshot, or a compact list you can expand per trade.
 - **Track your progress.** Built-in charts, such as execution growth, setup effectiveness, invalidation losses and psychology, by day, symbol, market condition, location and setup. Filter by year, month, week or day.
@@ -72,7 +72,7 @@ Your trades never leave your computer. To make a backup, copy the folder. To mov
 | Close the trade popup | Option + C | Alt + C |
 | Delete trade (in the trade popup) | Option + Backspace | Alt + Backspace |
 | Mark rule 1 to 9 (Rules tab of the trade popup, when Rules are on) | 1 – 9 | 1 – 9 |
-| Auto-Capture the chart window (trade popup) | Option + A | Alt + A |
+| Auto-Capture the chart window (trade popup, when not typing) | C | C |
 | Quick trade: Long / Short | Arrow Up / Down | Arrow Up / Down |
 | Quick trade: setup 1 to 9 (in the order of Settings) | 1 – 9 | 1 – 9 |
 | Quick trade: Auto-Capture | C | C |

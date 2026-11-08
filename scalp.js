@@ -4,9 +4,10 @@
 //  - Sidebar: Normal / Scalp. Scalp = violet line, "Quick trade" button, list view and the
 //    Quick trade popup (symbol from the previous trade, direction ↑↓, setup 1–9, result W/L/B, Auto-Capture).
 //  - Day bar above the trades of the day, in Normal and Scalp mode, from the first trade.
+//    Click a square to open that trade (a quick trade opens as Complete trade).
 //  - Max losses per day (Settings › Journal): a calm message, never blocks.
 //  - Quick trades get "Complete trade" (row tile + button, card pill); saving in the full form completes them.
-//  - Auto-Capture (or Connect window): C in Quick trade, Alt A in Add Trade.
+//  - Auto-Capture (or Connect window): C in Quick trade and in Add Trade (not while typing).
 // Data: trade.quick = true (gone once saved in the full form), settings.scalpMode,
 // settings.viewModeBeforeScalp, settings.limits.maxLosses. Nothing to migrate.
 
@@ -130,12 +131,13 @@ function scalpDayBar() {
         <div class="scalp-seq" role="group" aria-label="Trades of the day in order">${ts.map(t => {
             const s = rulesOn ? rulesTradeScore(t) : { no: 0 };
             const label = [`Trade ${t.number}`, t.setup, SCALP_RESULT_LABEL[t.result] || t.result, s.no ? `${s.no} ${s.no === 1 ? 'rule' : 'rules'} broken` : '', t.quick ? 'to complete' : ''].filter(Boolean).join(' · ');
-            return `<button type="button" class="scalp-sq ${tag(t.result)}${s.no ? ' is-broken' : ''}${t.quick ? ' is-quick' : ''}" data-scalp-trade="${escapeHTML(t.id)}" title="${escapeHTML(label)}" aria-label="${escapeHTML(label)}">${escapeHTML(String(t.number || ''))}</button>`;
+            return `<button type="button" class="scalp-sq ${tag(t.result)}${s.no ? ' is-broken' : ''}${t.quick ? ' is-quick' : ''}" data-scalp-trade="${escapeHTML(t.id)}" title="${escapeHTML(label)}" aria-label="${escapeHTML('Open ' + label.charAt(0).toLowerCase() + label.slice(1))}">${escapeHTML(String(t.number || ''))}</button>`;
         }).join('')}</div>
         ${warn ? `<div class="scalp-warn" role="status">${SCALP_ICONS.warn}<span>${warn}</span></div>` : ''}`;
+    // Click a square: open the trade (a quick trade opens as Complete trade, like its button)
     bar.querySelectorAll('[data-scalp-trade]').forEach(b => b.addEventListener('click', () => {
-        const el = [...document.querySelectorAll('#trades-list [data-trade-id]')].find(x => x.dataset.tradeId === b.dataset.scalpTrade);
-        if (el) el.scrollIntoView({ behavior: REDUCED_MOTION ? 'auto' : 'smooth', block: 'center' });
+        const t = appData.trades.find(x => x.id === b.dataset.scalpTrade); if (!t) return;
+        if (t.quick) scalpComplete(t.id); else openTradeModal(t.id);
     }));
     const next = bar.querySelector('[data-scalp-next]');
     if (next) next.addEventListener('click', () => scalpComplete(open[0].id));
@@ -475,7 +477,7 @@ function scalpSettingsEl() {
     return el;
 }
 
-// ---------- Alt A: Auto-Capture in Add Trade ----------
+// ---------- C: Auto-Capture in Add Trade (app.js) ----------
 function scalpCaptureShortcut() {
     if (!scalpFeatureOn) return false;
     const cap = document.getElementById('btn-auto-screenshot'), con = document.getElementById('btn-connect-window');
