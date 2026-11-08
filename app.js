@@ -345,8 +345,9 @@ function keysGroups() {
         groups[2].rows.splice(2, 0, ['Capture the chart', [A, 'A'], 'Auto-Capture; connects the window the first time']);
         if (typeof scalpModeOn === 'function' && scalpModeOn()) groups.push({ id: 'quick', title: 'Quick trade', note: 'scalping mode', rows: [
             ['Long / Short', ['↑', '|', '↓']],
+            ['Setup 1 to 9', ['1', '–', '9'], 'in the order of Settings'],
             ['Win / Loss / Break-even', ['W', '|', 'L', '|', 'B']],
-            ['Capture the chart', [A, 'A']],
+            ['Capture the chart', ['C']],
             ['Paste a screenshot', [A === 'Option' ? 'Cmd' : 'Ctrl', 'V']],
             ['Save & next trade', ['Enter']],
             ['Save & close', ['Shift', 'Enter']],

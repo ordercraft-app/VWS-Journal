@@ -52,8 +52,8 @@
         "creator": { "@type": "Organization", "name": "Order Craft", "url": "https://marketplace.elgato.com/@ordercraft" }
     }
     </script>
-    <link rel="stylesheet" href="styles.css?v=2026-11-08a">
-    <link rel="stylesheet" href="landing.css?v=2026-11-08a">
+    <link rel="stylesheet" href="styles.css?v=2026-11-08b">
+    <link rel="stylesheet" href="landing.css?v=2026-11-08b">
     <script>
         // Returning users: hide the welcome page before the first paint (gate.js decides for real)
         try { if (localStorage.getItem('vws-has-journal') === '1') document.documentElement.classList.add('has-journal'); } catch (e) {}
@@ -713,8 +713,8 @@
                                 <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                             <div class="faq-answer">
-                                <p>For days with many trades. Click the <strong>bolt</strong> at the bottom of the sidebar to switch from <strong>Normal</strong> to <strong>Scalp</strong>. A violet line shows it is on, the journal switches to the list view and <strong>Add Trade</strong> becomes <strong>Quick trade</strong>: a short popup with symbol, direction, setup and result. The symbol comes from your previous trade; <kbd class="keys-kbd is-inline">Enter</kbd> saves and starts the next trade.</p>
-                                <p>A screenshot is optional: <strong>Auto-Capture</strong> (<kbd class="keys-kbd is-inline">Alt</kbd> <kbd class="keys-kbd is-inline">A</kbd>, Option A on a Mac) takes a picture of your connected chart window, or paste one with <kbd class="keys-kbd is-inline">Ctrl</kbd> <kbd class="keys-kbd is-inline">V</kbd>. Later, click <strong>Complete trade</strong> to add the market condition, location and anything else. Click the pen to go back to Normal.</p>
+                                <p>For days with many trades. Click the <strong>bolt</strong> at the bottom of the sidebar to switch from <strong>Normal</strong> to <strong>Scalp</strong>. A violet line shows it is on, the journal switches to the list view and <strong>Add Trade</strong> becomes <strong>Quick trade</strong>: a short popup with symbol, direction (<kbd class="keys-kbd is-inline">↑</kbd> <kbd class="keys-kbd is-inline">↓</kbd>), setup (<kbd class="keys-kbd is-inline">1</kbd> to <kbd class="keys-kbd is-inline">9</kbd>) and result (<kbd class="keys-kbd is-inline">W</kbd> <kbd class="keys-kbd is-inline">L</kbd> <kbd class="keys-kbd is-inline">B</kbd>). The symbol comes from your previous trade; <kbd class="keys-kbd is-inline">Enter</kbd> saves and starts the next trade.</p>
+                                <p>A screenshot is optional: <strong>Auto-Capture</strong> (<kbd class="keys-kbd is-inline">C</kbd>) takes a picture of your connected chart window, or paste one with <kbd class="keys-kbd is-inline">Ctrl</kbd> <kbd class="keys-kbd is-inline">V</kbd>. Later, click <strong>Complete trade</strong> to add the market condition, location and anything else. Click the pen to go back to Normal.</p>
                             </div>
                         </div>
 
@@ -871,8 +871,9 @@
                                         <tr class="faq-scalp"><td>Auto-Capture the chart window</td><td><code>Option + A</code></td><td><code>Alt + A</code></td></tr>
                                         <tr class="faq-scalp"><td colspan="3" class="table-section-title">Quick Trade (Scalping mode)</td></tr>
                                         <tr class="faq-scalp"><td>Long / Short</td><td><code>Arrow Up / Down</code></td><td><code>Arrow Up / Down</code></td></tr>
+                                        <tr class="faq-scalp"><td>Setup 1 to 9 (order of Settings)</td><td><code>1</code> – <code>9</code></td><td><code>1</code> – <code>9</code></td></tr>
                                         <tr class="faq-scalp"><td>Win / Loss / Break-even</td><td><code>W</code> / <code>L</code> / <code>B</code></td><td><code>W</code> / <code>L</code> / <code>B</code></td></tr>
-                                        <tr class="faq-scalp"><td>Auto-Capture</td><td><code>Option + A</code></td><td><code>Alt + A</code></td></tr>
+                                        <tr class="faq-scalp"><td>Auto-Capture</td><td><code>C</code></td><td><code>C</code></td></tr>
                                         <tr class="faq-scalp"><td>Paste a screenshot</td><td><code>Cmd + V</code></td><td><code>Ctrl + V</code></td></tr>
                                         <tr class="faq-scalp"><td>Save &amp; next trade</td><td><code>Enter</code></td><td><code>Enter</code></td></tr>
                                         <tr class="faq-scalp"><td>Save &amp; close</td><td><code>Shift + Enter</code></td><td><code>Shift + Enter</code></td></tr>
@@ -1031,23 +1032,23 @@
     </div>
 
     <!-- ?v=: raised with every update, so browsers load the new files instead of a cached mix -->
-    <script defer src="globals.js?v=2026-11-08a"></script>
-    <script defer src="storage.js?v=2026-11-08a"></script>
-    <script defer src="ui.js?v=2026-11-08a"></script>
-    <script defer src="ui-settings.js?v=2026-11-08a"></script>
-    <script defer src="tradeform.js?v=2026-11-08a"></script>
-    <script defer src="share.js?v=2026-11-08a"></script>
-    <script defer src="customcharts.js?v=2026-11-08a"></script>
-    <script defer src="gate.js?v=2026-11-08a"></script>
-    <script defer src="charts.js?v=2026-11-08a"></script>
-    <script defer src="rules.js?v=2026-11-08a"></script>
-    <script defer src="rules-settings.js?v=2026-11-08a"></script>
-    <script defer src="rules-stats.js?v=2026-11-08a"></script>
-    <script defer src="system.js?v=2026-11-08a"></script>
-    <script defer src="backup.js?v=2026-11-08a"></script>
-    <script defer src="scalp.js?v=2026-11-08a"></script>
-    <script defer src="releases.js?v=2026-11-08a"></script>
-    <script defer src="app.js?v=2026-11-08a"></script>
+    <script defer src="globals.js?v=2026-11-08b"></script>
+    <script defer src="storage.js?v=2026-11-08b"></script>
+    <script defer src="ui.js?v=2026-11-08b"></script>
+    <script defer src="ui-settings.js?v=2026-11-08b"></script>
+    <script defer src="tradeform.js?v=2026-11-08b"></script>
+    <script defer src="share.js?v=2026-11-08b"></script>
+    <script defer src="customcharts.js?v=2026-11-08b"></script>
+    <script defer src="gate.js?v=2026-11-08b"></script>
+    <script defer src="charts.js?v=2026-11-08b"></script>
+    <script defer src="rules.js?v=2026-11-08b"></script>
+    <script defer src="rules-settings.js?v=2026-11-08b"></script>
+    <script defer src="rules-stats.js?v=2026-11-08b"></script>
+    <script defer src="system.js?v=2026-11-08b"></script>
+    <script defer src="backup.js?v=2026-11-08b"></script>
+    <script defer src="scalp.js?v=2026-11-08b"></script>
+    <script defer src="releases.js?v=2026-11-08b"></script>
+    <script defer src="app.js?v=2026-11-08b"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>
     <!-- End Cloudflare Web Analytics -->

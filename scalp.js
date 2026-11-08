@@ -2,11 +2,11 @@
 // Release switch: FEATURES.scalp.on (globals.js). Test per browser with ?scalp=on / ?scalp=off.
 // With the feature on:
 //  - Sidebar: Normal / Scalp. Scalp = violet line, "Quick trade" button, list view and the
-//    Quick trade popup (symbol from the previous trade, direction, setup, result, Auto-Capture).
+//    Quick trade popup (symbol from the previous trade, direction ↑↓, setup 1–9, result W/L/B, Auto-Capture).
 //  - Day bar above the trades of the day, in Normal and Scalp mode, from the first trade.
 //  - Max losses per day (Settings › Journal): a calm message, never blocks.
 //  - Quick trades get "Complete trade" (row tile + button, card pill); saving in the full form completes them.
-//  - Alt A = Auto-Capture (or Connect window) in Add Trade and Quick trade.
+//  - Auto-Capture (or Connect window): C in Quick trade, Alt A in Add Trade.
 // Data: trade.quick = true (gone once saved in the full form), settings.scalpMode,
 // settings.viewModeBeforeScalp, settings.limits.maxLosses. Nothing to migrate.
 
@@ -34,8 +34,6 @@ const SCALP_ICONS = {
     bolt: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z"/></svg>',
     bolt20: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z"/></svg>',
     pen: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-    up: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>',
-    down: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>',
     img: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
     warn: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
@@ -244,17 +242,16 @@ async function scalpAfterSave(trade) {
 }
 
 // ---------- Quick trade popup ----------
-let scalpQ = null; // { id, date, number, symbol, direction, setup, setupCategory, result, rules, broken:Set, from, shotBlob, shotUrl, allSetups }
+let scalpQ = null; // { id, date, number, symbol, direction, setup, setupCategory, result, rules, broken:Set, from, shotBlob, shotUrl }
 function scalpPrevious(date) {
     const day = appData.trades.filter(t => t.date === date).sort((a, b) => (parseInt(b.number, 10) || 0) - (parseInt(a.number, 10) || 0));
     if (day[0]) return day[0];
     return appData.trades.slice().sort((a, b) => scalpTradeKey(b).localeCompare(scalpTradeKey(a)))[0] || null;
 }
-function scalpSetupsByUse() {
+// All setups in the order of Settings, so the keys 1 to 9 always mean the same setup
+function scalpSetups() {
     const all = typeof tfAllSetups === 'function' ? tfAllSetups().map(s => s.item) : [];
-    const recent = appData.trades.slice().sort((a, b) => scalpTradeKey(b).localeCompare(scalpTradeKey(a))).slice(0, 60);
-    const count = {}; recent.forEach(t => { if (t.setup) count[t.setup] = (count[t.setup] || 0) + 1; });
-    return all.map((s, i) => [s, i]).sort((a, b) => ((count[b[0]] || 0) - (count[a[0]] || 0)) || (a[1] - b[1])).map(x => x[0]);
+    return all.filter((s, i) => s && all.indexOf(s) === i);
 }
 function scalpNumber(date) { const n = appData.trades.filter(t => t.date === date).map(t => parseInt(t.number, 10) || 0); return (n.length ? Math.max(...n) : 0) + 1; }
 function scalpQuickInit(symbol, from) {
@@ -263,13 +260,13 @@ function scalpQuickInit(symbol, from) {
     if (sym && !syms.includes(sym)) sym = '';
     if (!sym && syms.length === 1) sym = syms[0];
     scalpQ = { id: crypto.randomUUID(), date, number: scalpNumber(date), symbol: sym, direction: '', setup: '', setupCategory: '', result: '',
-        rules: null, broken: new Set(), from: from !== undefined ? from : (p && sym && p.symbol === sym ? p.number : null), shotBlob: null, shotUrl: '', allSetups: false };
+        rules: null, broken: new Set(), from: from !== undefined ? from : (p && sym && p.symbol === sym ? p.number : null), shotBlob: null, shotUrl: '' };
 }
 function scalpQuickMissing() {
     const q = scalpQ, s = appData.settings, miss = [];
     if ((s.symbol || []).length && !q.symbol) miss.push('Symbol');
     if ((s.direction || []).length && !q.direction) miss.push('Direction');
-    if (scalpSetupsByUse().length && !q.setup) miss.push('Setup');
+    if (scalpSetups().length && !q.setup) miss.push('Setup');
     if (!q.result) miss.push('Result');
     return miss;
 }
@@ -279,21 +276,18 @@ function scalpCaptureState() {
     return { supported, connected };
 }
 function scalpQuickShotHtml() {
-    const q = scalpQ, A = scalpAlt(), c = scalpCaptureState();
-    if (q.shotUrl) return `<div class="scalp-q-shot has-shot"><img class="scalp-q-shot-img" src="${q.shotUrl}" alt="Screenshot for trade ${q.number}"><span><strong>Screenshot added</strong></span>${c.supported ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Capture again ${scalpKbd(A)}${scalpKbd('A')}</button>` : ''}<button type="button" class="scalp-q-link" data-scalp-shot-remove>Remove</button></div>`;
-    const btn = c.connected ? `<button type="button" class="btn-primary btn-sm scalp-q-capture" data-scalp-capture>Auto-Capture ${scalpKbd(A, true)}${scalpKbd('A', true)}</button>`
-        : c.supported ? `<button type="button" class="btn-secondary btn-sm scalp-q-capture" data-scalp-capture>Connect window ${scalpKbd(A)}${scalpKbd('A')}</button>` : '';
+    const q = scalpQ, c = scalpCaptureState();
+    if (q.shotUrl) return `<div class="scalp-q-shot has-shot"><img class="scalp-q-shot-img" src="${q.shotUrl}" alt="Screenshot for trade ${q.number}"><span><strong>Screenshot added</strong></span>${c.supported ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Capture again ${scalpKbd('C')}</button>` : ''}<button type="button" class="scalp-q-link" data-scalp-shot-remove>Remove</button></div>`;
+    const btn = c.connected ? `<button type="button" class="btn-primary btn-sm scalp-q-capture" data-scalp-capture>Auto-Capture ${scalpKbd('C', true)}</button>`
+        : c.supported ? `<button type="button" class="btn-secondary btn-sm scalp-q-capture" data-scalp-capture>Connect window ${scalpKbd('C')}</button>` : '';
     return `<div class="scalp-q-shot">${SCALP_ICONS.img}<span>Screenshot <span class="scalp-q-note">optional</span></span>${btn}<span class="scalp-q-or">${btn ? 'or paste' : 'Paste'} ${scalpKbd(scalpCtrl())} ${scalpKbd('V')}</span></div>`;
 }
 function scalpQuickRender() {
     const box = document.getElementById('scalp-q-dialog'); if (!box || !scalpQ) return;
     const q = scalpQ, S = appData.settings;
     const chip = (field, v, label, extra = '') => `<button type="button" class="scalp-q-chip${q[field] === v ? ' is-on' : ''}" data-scalp-q="${field}" data-v="${escapeHTML(v)}" aria-pressed="${q[field] === v}">${label !== undefined ? label : escapeHTML(v)}${extra}</button>`;
-    const setups = scalpSetupsByUse();
-    let shown = q.allSetups ? setups : setups.slice(0, 5);
-    if (q.setup && !shown.includes(q.setup)) shown = [...shown.slice(0, 4), q.setup];
+    const setups = scalpSetups();
     const dirs = S.direction || [];
-    const dirLabel = v => v === 'Long' ? `${SCALP_ICONS.up}Long` : v === 'Short' ? `${SCALP_ICONS.down}Short` : escapeHTML(v);
     const dirKey = v => v === 'Long' ? scalpKbd('↑') : v === 'Short' ? scalpKbd('↓') : '';
     const rulesOn = scalpRulesOn() && q.setup && typeof rulesForSetup === 'function';
     const rlist = rulesOn ? rulesForSetup(q.setup) : [];
@@ -302,8 +296,8 @@ function scalpQuickRender() {
     box.querySelector('.scalp-q-body').innerHTML = `
         ${warn ? `<div class="scalp-warn" role="status">${SCALP_ICONS.warn}<span>${warn}</span></div>` : ''}
         ${(S.symbol || []).length ? `<div class="scalp-q-row"><span class="scalp-q-label">Symbol</span><div class="scalp-q-chips" role="group" aria-label="Symbol">${S.symbol.map(v => chip('symbol', v)).join('')}</div>${q.from && q.symbol ? `<span class="scalp-q-note">From trade ${escapeHTML(String(q.from))}</span>` : ''}</div>` : ''}
-        ${dirs.length ? `<div class="scalp-q-row"><span class="scalp-q-label">Direction</span><div class="scalp-q-chips is-big" role="group" aria-label="Direction">${dirs.map(v => chip('direction', v, dirLabel(v), dirKey(v))).join('')}</div></div>` : ''}
-        ${setups.length ? `<div class="scalp-q-row"><span class="scalp-q-label">Setup</span><div class="scalp-q-chips" role="group" aria-label="Setup">${shown.map(v => chip('setup', v)).join('')}${!q.allSetups && setups.length > shown.length ? `<button type="button" class="scalp-q-chip is-more" data-scalp-more>More…</button>` : ''}</div></div>` : ''}
+        ${dirs.length ? `<div class="scalp-q-row"><span class="scalp-q-label">Direction</span><div class="scalp-q-chips is-big" role="group" aria-label="Direction">${dirs.map(v => chip('direction', v, undefined, dirKey(v))).join('')}</div></div>` : ''}
+        ${setups.length ? `<div class="scalp-q-row"><span class="scalp-q-label">Setup</span><div class="scalp-q-chips" role="group" aria-label="Setup">${setups.map((v, i) => chip('setup', v, undefined, i < 9 ? scalpKbd(String(i + 1)) : '')).join('')}</div></div>` : ''}
         <div class="scalp-q-row"><span class="scalp-q-label">Result</span><div class="scalp-q-chips is-big" role="group" aria-label="Result">
             ${chip('result', 'WIN', 'Win', scalpKbd('W'))}${chip('result', 'LOST', 'Loss', scalpKbd('L'))}${chip('result', 'B/E', 'Break-even', scalpKbd('B'))}</div></div>
         ${rulesOn && rlist.length ? `<div class="scalp-q-row"><span class="scalp-q-label">Rules</span><div class="scalp-q-chips" role="group" aria-label="Rules">
@@ -347,7 +341,6 @@ function scalpQuickOpen() {
             if (f === 'setup') { q.setupCategory = typeof tfFindSetupCategory === 'function' ? tfFindSetupCategory(q.setup) : ''; q.rules = null; q.broken.clear(); }
             return scalpQuickRender();
         }
-        if (b.dataset.scalpMore !== undefined) { q.allSetups = true; return scalpQuickRender(); }
         if (b.dataset.scalpRules) { q.rules = q.rules === b.dataset.scalpRules ? null : b.dataset.scalpRules; if (q.rules !== 'broken') q.broken.clear(); return scalpQuickRender(); }
         if (b.dataset.scalpBroke) { q.broken.has(b.dataset.scalpBroke) ? q.broken.delete(b.dataset.scalpBroke) : q.broken.add(b.dataset.scalpBroke); return scalpQuickRender(); }
         if (b.dataset.scalpCapture !== undefined) return scalpQuickCapture();
@@ -358,12 +351,17 @@ function scalpQuickOpen() {
     box.addEventListener('keydown', e => {
         if (!scalpQ) return;
         const k = e.key, q = scalpQ;
-        if (e.altKey && e.code === 'KeyA') { e.preventDefault(); scalpQuickCapture(); return; }
         if (e.altKey || e.ctrlKey || e.metaKey) return;
+        if (k === 'c' || k === 'C') { e.preventDefault(); scalpQuickCapture(); return; } // C = Auto-Capture (or connect the window)
         const set = (f, v) => { e.preventDefault(); q[f] = v; scalpQuickRender(); };
         const dirs = appData.settings.direction || [];
         if (k === 'ArrowUp' && dirs.includes('Long')) return set('direction', 'Long');
         if (k === 'ArrowDown' && dirs.includes('Short')) return set('direction', 'Short');
+        if (/^[1-9]$/.test(k)) {
+            const v = scalpSetups()[Number(k) - 1];
+            if (v) { e.preventDefault(); q.setup = v; q.setupCategory = typeof tfFindSetupCategory === 'function' ? tfFindSetupCategory(v) : ''; q.rules = null; q.broken.clear(); scalpQuickRender(); }
+            return;
+        }
         if (k === 'w' || k === 'W') return set('result', 'WIN');
         if (k === 'l' || k === 'L') return set('result', 'LOST');
         if (k === 'b' || k === 'B') return set('result', 'B/E');
