@@ -424,6 +424,8 @@ function renderSettingsContent() {
     const onSettingsChange = async () => { await autoSave(); };
 
     if (currentSettingsTab === 'journal') {
+        // Show max losses per day message (scalp.js), on top, only while that release is on
+        if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn && typeof scalpSettingsEl === 'function') settingsContainer.appendChild(scalpSettingsEl());
         // VWS Journal system / own system (system.js)
         if (typeof systemSettingsEl === 'function') settingsContainer.appendChild(systemSettingsEl());
         const banner = document.createElement('div');
@@ -442,8 +444,6 @@ function renderSettingsContent() {
         settingsContainer.appendChild(renderComplexSetting('Target', appData.settings.target, '3-level', onSettingsChange, 'target'));
         
         settingsContainer.appendChild(renderSimpleSetting('Psychology', appData.settings.psychology, onSettingsChange, 'psychology'));
-        // Max losses per day (scalp.js), only while that release is on
-        if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn && typeof scalpSettingsEl === 'function') settingsContainer.appendChild(scalpSettingsEl());
 
                 
 

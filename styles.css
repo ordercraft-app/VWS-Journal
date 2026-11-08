@@ -1967,3 +1967,13 @@ html.scalp-on .scalp-day-bar { box-shadow: inset 0 0 0 1px color-mix(in srgb, va
 @media (max-width: 860px) {
     .scalp-col { width: auto; margin-right: 0; }
 }
+/* Empty stage: the text wraps inside the box (buttons don't wrap by default) */
+.shots-empty, .shots-empty span { white-space: normal; }
+.shots-empty span { max-width: 100%; }
+.shots-empty .keys-kbd { white-space: nowrap; }
+/* Thumbnails in the form open the enlarged view when the stage doesn't fit (smaller screens) */
+.shots-chip-zoom { display: none; position: absolute; right: 5px; bottom: 5px; width: 22px; height: 22px; border-radius: 6px; background: rgba(0,0,0,.7); color: #fff; align-items: center; justify-content: center; }
+.shots-strip.is-narrow .shots-chip-zoom { display: flex; }
+.shots-strip.is-narrow .shots-chip-img { cursor: zoom-in; }
+.shots-strip.is-narrow .shots-chip.is-on .shots-chip-img { border-color: transparent; }
+.shots-strip.is-narrow .shots-chip-img:hover, .shots-strip.is-narrow .shots-chip-img:focus-visible { border-color: var(--accent); }

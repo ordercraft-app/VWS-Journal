@@ -457,14 +457,14 @@ async function scalpQuickFull(close) {
     for (const blob of blobs) await handleImageFile(new File([blob], `quick_${Date.now()}.webp`, { type: 'image/webp' }));
 }
 
-// ---------- Settings › Journal: Daily limit ----------
+// ---------- Settings › Journal (top): Show max losses per day message ----------
 function scalpSettingsEl() {
     const el = document.createElement('div');
     el.className = 'setting-category-card scalp-limits';
     const cur = scalpLimits().maxLosses;
     const opts = [[0, 'Off'], [2, '2'], [3, '3'], [4, '4'], [5, '5']];
-    el.innerHTML = `<h2 class="setting-cat-title">Daily limit</h2>
-        <div class="scalp-limit-row"><div><strong>Max losses per day</strong><span class="help-text">When you reach it, the day bar, Add Trade and Quick trade show a calm message. It never stops you from logging. Works in Normal and Scalp mode.</span></div>
+    el.innerHTML = `<h2 class="setting-cat-title">Show max losses per day message</h2>
+        <div class="scalp-limit-row"><div><strong>Losses per day</strong><span class="help-text">When you reach it, the day bar, Add Trade and Quick trade show a calm message. It never stops you from logging. Works in Normal and Scalp mode.</span></div>
         <div class="cc-seg" role="group" aria-label="Max losses per day">${opts.map(([v, t]) => `<button type="button" class="cc-seg-btn${cur === v ? ' is-selected' : ''}" data-scalp-limit="${v}" aria-pressed="${cur === v}">${t}</button>`).join('')}</div></div>`;
     el.querySelectorAll('[data-scalp-limit]').forEach(b => b.addEventListener('click', () => {
         const v = Number(b.dataset.scalpLimit);

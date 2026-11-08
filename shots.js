@@ -22,6 +22,10 @@ const SHOTS_I = {
     plus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
 };
 
+// The stage next to the form only fits on wide screens (same query as styles.css)
+const SHOTS_WIDE = '(min-width: 1100px) and (min-height: 560px)';
+function shotsStageShown() { try { return window.matchMedia(SHOTS_WIDE).matches; } catch (e) { return true; } }
+
 function shotsActive() { return typeof scalpFeatureOn !== 'undefined' && !!scalpFeatureOn; }
 
 // ---------- form state ----------
@@ -157,7 +161,10 @@ function shotsStrip() {
     imagePreviewContainer.style.display = 'none';
     imageDropzone.style.display = n ? 'none' : 'flex';
     if (!n) { s.innerHTML = ''; return; }
-    s.innerHTML = shotsSt.items.map((x, i) => `<div class="shots-chip${i === shotsSt.at ? ' is-on' : ''}"><button type="button" class="shots-chip-img" data-shots-pick="${i}" aria-label="Show screenshot ${i + 1}${i === n - 1 ? ' (latest)' : ''}" aria-pressed="${i === shotsSt.at}">${x.url ? `<img src="${x.url}" alt="">` : ''}<span class="shots-chip-n">${i + 1}</span>${i === n - 1 ? '<span class="shots-chip-tag">Latest</span>' : ''}</button><button type="button" class="shots-chip-x" data-shots-remove="${i}" aria-label="Remove screenshot ${i + 1}" title="Remove">&times;</button></div>`).join('')
+    // Without the stage (smaller screens) a thumbnail opens the enlarged view instead
+    const wide = shotsStageShown();
+    s.classList.toggle('is-narrow', !wide);
+    s.innerHTML = shotsSt.items.map((x, i) => `<div class="shots-chip${i === shotsSt.at ? ' is-on' : ''}"><button type="button" class="shots-chip-img" data-shots-pick="${i}" aria-label="${wide ? 'Show' : 'Enlarge'} screenshot ${i + 1}${i === n - 1 ? ' (latest)' : ''}"${wide ? ` aria-pressed="${i === shotsSt.at}"` : ''} title="${wide ? 'Show next to the form' : 'Enlarge'}">${x.url ? `<img src="${x.url}" alt="">` : ''}<span class="shots-chip-n">${i + 1}</span>${i === n - 1 ? '<span class="shots-chip-tag">Latest</span>' : ''}${x.url ? `<span class="shots-chip-zoom" aria-hidden="true">${SHOTS_I.expand}</span>` : ''}</button><button type="button" class="shots-chip-x" data-shots-remove="${i}" aria-label="Remove screenshot ${i + 1}" title="Remove">&times;</button></div>`).join('')
         + (n < SHOTS_MAX ? `<button type="button" class="shots-add" data-shots-add>${SHOTS_I.plus}<span>Add</span><small>paste · drop · capture</small></button>` : `<span class="shots-full help-text">${SHOTS_MAX} screenshots: the most a trade holds</span>`);
 }
 
@@ -261,7 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
     tradeModal.addEventListener('click', e => {
         if (!shotsSt.open) return;
         const go = e.target.closest('[data-shots-go]'); if (go) { shotsGo(Number(go.dataset.shotsGo)); return; }
-        const pick = e.target.closest('[data-shots-pick]'); if (pick) { shotsPick(Number(pick.dataset.shotsPick)); return; }
+        const pick = e.target.closest('[data-shots-pick]');
+        if (pick) {
+            shotsPick(Number(pick.dataset.shotsPick));
+            // In the form without the stage next to it: open the enlarged view
+            if (pick.classList.contains('shots-chip-img') && !shotsStageShown() && shotsCurrentUrl()) shotsEnlargeFromForm();
+            return;
+        }
         const rm = e.target.closest('[data-shots-remove]'); if (rm) { shotsRemove(Number(rm.dataset.shotsRemove)); return; }
         if (e.target.closest('[data-shots-add]')) { tImageInput.click(); return; }
         if (e.target.closest('[data-shots-enlarge]')) shotsEnlargeFromForm();
@@ -280,6 +293,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = [...((e.dataTransfer && e.dataTransfer.files) || [])].filter(f => f.type && f.type.startsWith('image/'));
         for (const f of files) await handleImageFile(f);
     });
+
+    // Screen gets wider / narrower while the form is open: thumbnails switch between show and enlarge
+    try { window.matchMedia(SHOTS_WIDE).addEventListener('change', () => { if (shotsSt.open) shotsStrip(); }); } catch (e) {}
 
     imageViewerModal.addEventListener('click', e => {
         const g = e.target.closest('[data-shots-vgo]'); if (g) { shotsViewerGo(shotsView.at + Number(g.dataset.shotsVgo)); return; }
