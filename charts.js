@@ -33,11 +33,61 @@ function progressiveLineAnimation(pointCount, totalDuration = 1000) {
         ? ctx.chart.scales.y.getPixelForValue(0)
         : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
     return {
+        // One stagger per run: when the chart animates in again (statsChartsEnter), $enterRun goes up and the line draws again
         x: { type: 'number', easing: 'linear', duration: step, from: NaN,
-             delay(ctx) { if (ctx.type !== 'data' || ctx.xStarted) return 0; ctx.xStarted = true; return ctx.index * step; } },
+             delay(ctx) { const run = ctx.chart.$enterRun || 0; if (ctx.type !== 'data' || ctx.xRun === run) return 0; ctx.xRun = run; return ctx.index * step; } },
         y: { type: 'number', easing: 'linear', duration: step, from: previousY,
-             delay(ctx) { if (ctx.type !== 'data' || ctx.yStarted) return 0; ctx.yStarted = true; return ctx.index * step; } }
+             delay(ctx) { const run = ctx.chart.$enterRun || 0; if (ctx.type !== 'data' || ctx.yRun === run) return 0; ctx.yRun = run; return ctx.index * step; } }
     };
+}
+
+// --- Charts animate in when their card is on screen ---
+// The charts used to play their animation right away, while the cards were still fading in (or far
+// below the fold), so it was over before anyone saw it. Now every chart on the Stats page waits in its
+// start state (bars at zero, empty circles, no line) and plays its animation once its card is visible:
+// on load (after the card has started to fade in) and when you scroll to it.
+let statsChartObserver = null;
+const statsCardCharts = new WeakMap();
+function statsChartsEnter() {
+    if (statsChartObserver) { statsChartObserver.disconnect(); statsChartObserver = null; }
+    const view = document.getElementById('view-stats');
+    if (Chart.defaults.animation === false || !view || !view.classList.contains('active') || typeof IntersectionObserver !== 'function') return;
+    statsChartObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (!e.isIntersecting) return;
+            statsChartObserver.unobserve(e.target);
+            statsChartPlay(e.target);
+        });
+    }, { root: view, threshold: 0.25 });
+    Object.values(chartInstances).forEach(c => {
+        if (!c || !c.canvas || !view.contains(c.canvas)) return;
+        const card = c.canvas.closest('.stat-card') || c.canvas.parentElement;
+        if (!card || card.offsetParent === null) return; // hidden card or tab: leave it as it is
+        c.stop();
+        c.reset();   // back to the start state...
+        c.render();  // ...and show that until the card is on screen
+        const list = statsCardCharts.get(card) || [];
+        if (!list.includes(c)) list.push(c);
+        statsCardCharts.set(card, list.filter(x => x.canvas && Chart.getChart(x.canvas) === x));
+        statsChartObserver.observe(card);
+    });
+}
+function statsChartPlay(card) {
+    // Start when the card's own fade-in is about a third done, so both read as one movement
+    let wait = 0;
+    const a = typeof card.getAnimations === 'function' ? card.getAnimations().find(x => x.animationName === 'fadeSlideUp') : null;
+    if (a && a.playState !== 'finished') {
+        const t = a.effect.getComputedTiming();
+        wait = Math.max(0, (t.delay || 0) + (t.duration || 0) * 0.35 - (a.currentTime || 0));
+    }
+    setTimeout(() => {
+        (statsCardCharts.get(card) || []).forEach(c => {
+            if (!c.canvas || Chart.getChart(c.canvas) !== c) return; // redrawn in the meantime
+            c.$enterRun = (c.$enterRun || 0) + 1;
+            c.update();
+        });
+        statsCardCharts.delete(card);
+    }, wait);
 }
 
 // Long category labels (setups, locations, ...) wrap over several lines
@@ -669,4 +719,7 @@ function renderStatsDashboard() {
 
     // 13. Rules tab (rules.js), same filtered trades
     if (typeof rulesRenderStats === 'function') rulesRenderStats(trades);
+
+    // 14. Every chart animates in once its card is on screen
+    statsChartsEnter();
 }

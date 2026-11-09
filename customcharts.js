@@ -444,7 +444,7 @@ function ccRenderHeatmap(body, c, trades) {
     const thead = document.createElement('thead');
     const hr = document.createElement('tr');
     const corner = document.createElement('th');
-    corner.textContent = '';
+    corner.innerHTML = '<span class="cc-sr">Rows by columns</span>'; // a header needs a name (a11y); only screen readers hear it
     hr.appendChild(corner);
     colLabels.forEach(col => {
         const th = document.createElement('th');
