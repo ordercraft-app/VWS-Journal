@@ -1799,7 +1799,13 @@ html.scalp-on body::before { content: ""; position: fixed; left: 0; right: 0; to
 html.scalp-on .app-header { box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--scalp) 30%, transparent); }
 html.scalp-on #btn-new-trade, .scalp-first { background: var(--scalp); border-color: var(--scalp); display: inline-flex; align-items: center; gap: 7px; }
 html.scalp-on #btn-new-trade:hover, .scalp-first:hover { background: #6d28d9; border-color: #6d28d9; }
-html.scalp-on .sidebar-logo { box-shadow: 0 0 0 2px var(--scalp); border-radius: 10px; }
+/* Scalp: violet ring around the logo (3 px, follows the icon's own corner) that breathes (design LogoPulse, version A) */
+html.scalp-on .sidebar-logo { box-shadow: 0 0 0 3px var(--scalp); border-radius: 6.5px; }
+html.scalp-on .sidebar-top { position: relative; }
+html.scalp-on .sidebar-top::after { content: ""; position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 6.5px; box-shadow: 0 0 0 3px #a78bfa, 0 0 10px 5px rgba(139, 92, 246, 0.6); opacity: 0; pointer-events: none; animation: scalpLogoBreathe 2.4s ease-in-out infinite; }
+html.scalp-on[data-theme="light"] .sidebar-top::after { box-shadow: 0 0 0 3px #6d28d9, 0 0 9px 5px rgba(124, 58, 237, 0.45); }
+@keyframes scalpLogoBreathe { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { html.scalp-on .sidebar-top::after { animation: none; opacity: 0; } }
 /* Day bar */
 .scalp-day-bar { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; margin-bottom: 16px; border-radius: 16px; background: var(--bg-panel); }
 html.scalp-on .scalp-day-bar { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--scalp) 35%, transparent); }
