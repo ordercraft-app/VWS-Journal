@@ -62,24 +62,29 @@ Your trades never leave your computer. To make a backup, copy the folder. To mov
 | Action | Mac | Windows |
 | --- | --- | --- |
 | New trade | Option + N | Alt + N |
-| Dark / light mode | Option + M | Alt + M |
+| Dark / light mode (also in a popup) | Option + M | Alt + M |
+| Previous / next screenshot (next to the trade popup and in the enlarged view, where Arrow Left / Right work too) | Option + Arrow Left / Right | Alt + Arrow Left / Right |
 | Show all shortcuts | ? | ? |
 | Close a popup | Esc | Esc |
-| Jump to today | Option + T | Alt + T |
+| Jump to today | T | T |
 | Previous / next day | Arrow Left / Right | Arrow Left / Right |
 | Previous / next week (same weekday) | Shift + Arrow Left / Right | Shift + Arrow Left / Right |
 | Save trade (in the trade popup) | Option + S | Alt + S |
-| Close the trade popup | Option + C | Alt + C |
-| Delete trade (in the trade popup) | Option + Backspace | Alt + Backspace |
-| Mark rule 1 to 9 (Rules tab of the trade popup, when Rules are on) | 1 – 9 | 1 – 9 |
+| Close the trade popup | Esc | Esc |
+| Delete trade (in the trade popup, when not typing) | Option + Backspace | Alt + Backspace |
 | Auto-Capture the chart window (trade popup, when not typing) | C | C |
+| Win / Loss / Break-even (trade popup, when not typing) | W / L / B | W / L / B |
+| Mark rule 1 to 9 (Rules tab of the trade popup, when Rules are on) | 1 – 9 | 1 – 9 |
+| All rules followed (Rules tab of the trade popup, when Rules are on) | A | A |
 | Quick trade: Long / Short | Arrow Up / Down | Arrow Up / Down |
 | Quick trade: setup 1 to 9 (in the order of Settings) | 1 – 9 | 1 – 9 |
-| Quick trade: Auto-Capture | C | C |
 | Quick trade: Win / Loss / Break-even | W / L / B | W / L / B |
-| Quick trade: save and start the next trade / save and close | Enter / Shift + Enter | Enter / Shift + Enter |
+| Quick trade: all rules followed (when Rules are on) | A | A |
+| Quick trade: Auto-Capture | C | C |
+| Quick trade: save and start the next trade | Enter or Option + S | Enter or Alt + S |
+| Quick trade: save and close | Shift + Enter or Option + Shift + S | Shift + Enter or Alt + Shift + S |
 
-Day and week shortcuts work on the dashboard when you are not typing in a field. Press ? anywhere in the app to see all shortcuts, or click the keyboard button in the sidebar.
+Today, day and week shortcuts work on the dashboard when you are not typing in a field. Press ? anywhere in the app to see all shortcuts, or click the keyboard button in the sidebar.
 
 ## Project structure
 

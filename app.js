@@ -86,16 +86,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // W / L / B in the trade form: Win / Loss / Break-even, same keys as Quick trade (not while typing)
+        if (isModalOpen && !isInputFocused && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.repeat
+            && typeof tfSetResult === 'function') {
+            const r = { w: 'WIN', l: 'LOST', b: 'B/E' }[String(e.key).toLowerCase()];
+            if (r) { e.preventDefault(); tfSetResult(r); return; }
+        }
+
         // Alt/Option combinations
         if (e.altKey) {
             if (e.code === 'KeyN') {
                 e.preventDefault();
                 if (!isModalOpen) document.getElementById('btn-new-trade').click();
-                return;
-            }
-            if (e.code === 'KeyM') {
-                e.preventDefault();
-                document.getElementById('btn-theme-toggle').click();
                 return;
             }
 
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     return;
                 }
-                if (e.code === 'KeyC') {
+                if (e.code === 'KeyC') { // not in the keys list any more (Esc closes); still works
                     e.preventDefault();
                     document.getElementById('btn-cancel-modal').click();
                     return;
@@ -123,14 +125,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     shotsGo(e.code === 'ArrowLeft' ? -1 : 1);
                     return;
                 }
-                if (e.code === 'Backspace' || e.key === 'Backspace') {
+                // Not while typing: on a Mac Option+Backspace deletes a word in a field
+                if (!isInputFocused && (e.code === 'Backspace' || e.key === 'Backspace')) {
                     e.preventDefault();
                     const btnDel = document.getElementById('btn-delete-trade');
                     if (btnDel && btnDel.style.display !== 'none') btnDel.click();
                     return;
                 }
             } else if (isDashboardOpen) {
-                if (e.code === 'KeyT') {
+                if (e.code === 'KeyT') { // not in the keys list any more (T alone); still works
                     e.preventDefault();
                     const btnToday = document.getElementById('btn-today');
                     if (btnToday) btnToday.click();
@@ -141,6 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Non-Alt shortcuts (Dashboard Navigation)
         if (!e.altKey && isDashboardOpen && !isModalOpen && !isInputFocused) {
+            if ((e.key === 't' || e.key === 'T') && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.repeat) {
+                e.preventDefault();
+                const btnToday = document.getElementById('btn-today');
+                if (btnToday) btnToday.click();
+                return;
+            }
             if (e.code === 'ArrowRight') {
                 e.preventDefault();
                 if (e.shiftKey) {
@@ -341,33 +350,38 @@ function keysGroups() {
             ['Close a popup', ['Esc']],
         ] },
         { id: 'dashboard', title: 'Dashboard', note: 'when you are not typing', rows: [
-            ['Jump to today', [A, 'T']],
+            ['Jump to today', ['T']],
             ['Previous / next day', ['←', '|', '→']],
             ['Previous / next week', ['Shift', '←', '|', '→']],
         ] },
         { id: 'trade', title: 'Add Trade', rows: [
             ['Save trade', [A, 'S']],
-            ['Close the form', [A, 'C']],
-            ['Delete trade', [A, 'Backspace'], 'when you edit a trade'],
+            ['Close the form', ['Esc']],
+            ['Delete trade', [A, 'Backspace'], 'when you edit a trade; not while typing'],
+            ['Win / Loss / Break-even', ['W', '|', 'L', '|', 'B'], 'when you are not typing'],
         ] },
     ];
+    const rulesKeys = typeof rulesActive === 'function' && rulesActive();
     // Scalping mode release (scalp.js): Auto-Capture key, and the Quick trade keys while Scalp is on
     if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
-        groups[2].rows.splice(2, 0, ['Capture the chart', ['C'], 'Auto-Capture; when you are not typing']);
-        // Multiple screenshots (shots.js)
-        groups[2].rows.splice(3, 0, ['Previous / next screenshot', [A, '←', '|', '→'], 'when you are not typing']);
-        groups[0].rows.splice(3, 0, ['Previous / next enlarged screenshot', ['←', '|', '→']]);
+        groups[2].rows.splice(3, 0, ['Capture the chart', ['C'], 'Auto-Capture; when you are not typing']);
+        // Multiple screenshots (shots.js): next to the form and in the enlarged view
+        groups[0].rows.splice(2, 0, ['Previous / next screenshot', [A, '←', '|', '→'], 'in the enlarged view also ← →']);
         if (typeof scalpModeOn === 'function' && scalpModeOn()) groups.push({ id: 'quick', title: 'Quick trade', note: 'scalping mode', rows: [
             ['Long / Short', ['↑', '|', '↓']],
             ['Setup 1 to 9', ['1', '–', '9'], 'in the order of Settings'],
             ['Win / Loss / Break-even', ['W', '|', 'L', '|', 'B']],
+            ...(rulesKeys ? [['All rules followed', ['A']]] : []),
             ['Capture the chart', ['C']],
             ['Paste a screenshot', [A === 'Option' ? 'Cmd' : 'Ctrl', 'V']],
-            ['Save & next trade', ['Enter']],
-            ['Save & close', ['Shift', 'Enter']],
+            ['Save & next trade', ['Enter', '|', A, 'S']],
+            ['Save & close', ['Shift', 'Enter', '|', A, 'Shift', 'S']],
         ] });
     }
-    if (typeof rulesFeatureOn !== 'undefined' && rulesFeatureOn) groups[2].rows.push(['Mark rule 1 to 9', ['1', '–', '9'], 'followed → not followed → open']);
+    if (rulesKeys) {
+        groups[2].rows.push(['Mark rule 1 to 9', ['1', '–', '9'], 'followed → not followed → open']);
+        groups[2].rows.push(['All rules followed', ['A']]);
+    }
     return groups;
 }
 
@@ -417,6 +431,15 @@ function openKeysDialog() {
     release = appDialogTrap(box, { onEscape: close, initialFocus: box, returnFocus: before });
 }
 
+// Alt M: dark / light mode, also while a popup is open (capture: before a popup stops the keys)
+document.addEventListener('keydown', e => {
+    if (!e.altKey || e.ctrlKey || e.metaKey || e.code !== 'KeyM') return;
+    if (typeof isGateOpen === 'function' && isGateOpen()) return;
+    e.preventDefault();
+    const b = document.getElementById('btn-theme-toggle');
+    if (b) b.click();
+}, true);
+
 document.addEventListener('keydown', e => {
     if (e.key !== '?' || e.altKey || e.ctrlKey || e.metaKey) return;
     if (typeof isGateOpen === 'function' && isGateOpen()) return;
@@ -432,10 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const kb = document.getElementById('btn-keys');
     if (kb) kb.addEventListener('click', openKeysDialog);
     const A = keysAlt();
-    [['btn-new-trade', 'New trade', 'N'], ['btn-today', 'Jump to today', 'T'], ['btn-theme-toggle', 'Dark / light mode', 'M'],
-     ['btn-save-trade', 'Save trade', 'S'], ['btn-cancel-modal', 'Close the form', 'C']].forEach(([id, label, key]) => {
+    [['btn-new-trade', 'New trade', `${A} N`], ['btn-today', 'Jump to today', 'T'], ['btn-theme-toggle', 'Dark / light mode', `${A} M`],
+     ['btn-save-trade', 'Save trade', `${A} S`], ['btn-cancel-modal', 'Close the form', 'Esc']].forEach(([id, label, key]) => {
         const b = document.getElementById(id);
-        if (b) b.title = `${label} (${A} ${key})`;
+        if (b) b.title = `${label} (${key})`;
     });
     if (typeof scalpFeatureOn !== 'undefined' && scalpFeatureOn) {
         [['btn-auto-screenshot', 'Auto-Capture'], ['btn-connect-window', 'Connect the chart window']].forEach(([id, label]) => {

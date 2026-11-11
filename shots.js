@@ -302,10 +302,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const p = e.target.closest('[data-shots-vpick]'); if (p) { shotsViewerGo(Number(p.dataset.shotsVpick)); return; }
     });
     imageViewerModal.addEventListener('keydown', e => {
-        if (shotsView.urls.length < 2 || e.altKey || e.ctrlKey || e.metaKey) return;
+        // ← → and Alt ← → (same key as next to the form)
+        if (shotsView.urls.length < 2 || e.ctrlKey || e.metaKey || e.shiftKey) return;
         if (e.key === 'ArrowLeft') { e.preventDefault(); shotsViewerGo(shotsView.at - 1); }
         else if (e.key === 'ArrowRight') { e.preventDefault(); shotsViewerGo(shotsView.at + 1); }
-        else if (e.key === 'Home') { e.preventDefault(); shotsViewerGo(0); }
-        else if (e.key === 'End') { e.preventDefault(); shotsViewerGo(shotsView.urls.length - 1); }
     });
 });

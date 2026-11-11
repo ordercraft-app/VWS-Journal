@@ -305,6 +305,16 @@ function tfRenderSingle(field, options, toneFn) {
     tfUpdateNote(field);
 }
 
+// W / L / B in the form (app.js): sets the result, a second press keeps it
+function tfSetResult(v) {
+    if (!TF_RESULTS.includes(v)) return;
+    tfState.result = v;
+    tfState.carried.result = false;
+    tfMarkDirty();
+    tfClearMissing('result');
+    tfRenderSingle('result', TF_RESULTS, r => TF_RESULT_TONES[r] || '');
+}
+
 function tfUpdateNote(field) {
     const note = document.getElementById(`tf-note-${field}`);
     if (!note) return;

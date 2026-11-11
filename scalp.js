@@ -42,6 +42,7 @@ const SCALP_ICONS = {
 const SCALP_RESULT_LABEL = { WIN: 'Win', LOST: 'Loss', 'B/E': 'Break-even' };
 const scalpAlt = () => (typeof keysAlt === 'function' ? keysAlt() : 'Alt');
 const scalpCtrl = () => (scalpAlt() === 'Option' ? 'Cmd' : 'Ctrl');
+const scalpAltKey = () => typeof keysAlt === 'function' ? keysAlt() : 'Alt';
 const scalpKbd = (k, primary) => `<kbd class="keys-kbd is-inline${primary ? ' is-on-primary' : ''}">${escapeHTML(k)}</kbd>`;
 const scalpTradeKey = t => String(t.date || '') + String(parseInt(t.number, 10) || 0).padStart(5, '0');
 
@@ -330,8 +331,8 @@ function scalpQuickOpen() {
         <div class="scalp-q-head"><span class="scalp-q-icon">${SCALP_ICONS.bolt}</span><div><h2 id="scalp-q-title">Quick trade</h2><span class="scalp-q-sub"></span></div></div>
         <div class="scalp-q-body"></div>
         <div class="scalp-q-foot">
-            <button type="button" class="btn-primary" data-scalp-save="next">Save &amp; next ${scalpKbd('Enter', true)}</button>
-            <button type="button" class="btn-secondary" data-scalp-save="close">Save &amp; close</button>
+            <button type="button" class="btn-primary" data-scalp-save="next" title="Save &amp; next (Enter or ${scalpAltKey()} S)">Save &amp; next ${scalpKbd('Enter', true)}</button>
+            <button type="button" class="btn-secondary" data-scalp-save="close" title="Save &amp; close (Shift Enter or ${scalpAltKey()} Shift S)">Save &amp; close</button>
             <span class="scalp-q-hint help-text" aria-live="polite"></span>
             <button type="button" class="scalp-q-link" data-scalp-full>Full form</button>
         </div></div>`;
@@ -361,6 +362,14 @@ function scalpQuickOpen() {
     box.addEventListener('keydown', e => {
         if (!scalpQ) return;
         const k = e.key, q = scalpQ;
+        // Alt S = save & next, Alt Shift S = save & close (same as Enter / Shift Enter)
+        if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyS') {
+            e.preventDefault();
+            if (e.repeat) return;
+            if (!scalpQuickMissing().length) scalpQuickSave(e.shiftKey, close);
+            else showToast(`Still needed: ${scalpQuickMissing().join(', ')}`, 'error');
+            return;
+        }
         if (e.altKey || e.ctrlKey || e.metaKey) return;
         if (k === 'c' || k === 'C') { e.preventDefault(); scalpQuickCapture(); return; } // C = Auto-Capture (or connect the window)
         const set = (f, v) => { e.preventDefault(); q[f] = v; scalpQuickRender(); };

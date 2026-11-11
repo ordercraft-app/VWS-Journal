@@ -1040,6 +1040,16 @@ document.addEventListener('keydown', e => {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     const a = document.activeElement;
     if (a && (['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName) || a.isContentEditable)) return;
+    if (e.key === 'a' || e.key === 'A') {
+        // A: all rules followed (same key as Quick trade)
+        const all = rulesFormList();
+        if (!all.length || e.repeat) return;
+        e.preventDefault();
+        all.forEach(r => { rulesForm.checks[r.id] = true; });
+        rulesForm.open = true;
+        tfMarkDirty();
+        return;
+    }
     if (!/^[1-9]$/.test(e.key)) return;
     const list = rulesFormList();
     const r = list[Number(e.key) - 1];
