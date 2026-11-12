@@ -321,6 +321,13 @@ function scalpQuickRender() {
     box.querySelector('.scalp-q-hint').textContent = miss.length ? `Still needed: ${miss.join(', ')}` : 'Ready · Enter saves, then the next trade';
     if (!box.contains(document.activeElement)) box.focus({ preventScroll: true }); // a re-render must not drop the keys
 }
+// 1-9 by key position (Digit / Numpad), so AZERTY keyboards work too (they give & é " … without Shift)
+function scalpDigitKey(e) {
+    const m = /^(?:Digit|Numpad)([1-9])$/.exec(e.code || '');
+    if (m) return Number(m[1]);
+    return /^[1-9]$/.test(e.key) ? Number(e.key) : 0;
+}
+
 function scalpQuickOpen() {
     if (!scalpModeOn() || document.getElementById('app-dialog') || tradeModal.classList.contains('active')) return;
     if (!dirHandle || !fileConnected) return;
@@ -376,8 +383,9 @@ function scalpQuickOpen() {
         const dirs = appData.settings.direction || [];
         if (k === 'ArrowUp' && dirs.includes('Long')) return set('direction', 'Long');
         if (k === 'ArrowDown' && dirs.includes('Short')) return set('direction', 'Short');
-        if (/^[1-9]$/.test(k)) {
-            const v = scalpSetups()[Number(k) - 1];
+        const digit = scalpDigitKey(e);
+        if (digit) {
+            const v = scalpSetups()[digit - 1];
             if (v) { e.preventDefault(); q.setup = v; q.setupCategory = typeof tfFindSetupCategory === 'function' ? tfFindSetupCategory(v) : ''; q.rules = null; q.broken.clear(); scalpQuickRender(); }
             return;
         }

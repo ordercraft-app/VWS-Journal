@@ -1050,9 +1050,12 @@ document.addEventListener('keydown', e => {
         tfMarkDirty();
         return;
     }
-    if (!/^[1-9]$/.test(e.key)) return;
+    // By key position, so AZERTY keyboards work too (same as Quick trade)
+    const dm = /^(?:Digit|Numpad)([1-9])$/.exec(e.code || '');
+    const digit = dm ? Number(dm[1]) : (/^[1-9]$/.test(e.key) ? Number(e.key) : 0);
+    if (!digit) return;
     const list = rulesFormList();
-    const r = list[Number(e.key) - 1];
+    const r = list[digit - 1];
     if (!r) return;
     e.preventDefault();
     const v = rulesForm.checks[r.id];

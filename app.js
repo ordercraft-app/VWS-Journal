@@ -433,7 +433,8 @@ function openKeysDialog() {
 
 // Alt M: dark / light mode, also while a popup is open (capture: before a popup stops the keys)
 document.addEventListener('keydown', e => {
-    if (!e.altKey || e.ctrlKey || e.metaKey || e.code !== 'KeyM') return;
+    // The M key is KeyM on QWERTY, but Semicolon on AZERTY: also accept the letter (Option M on a Mac gives µ)
+    if (!e.altKey || e.ctrlKey || e.metaKey || !(e.code === 'KeyM' || /^[mMµ]$/.test(e.key))) return;
     if (typeof isGateOpen === 'function' && isGateOpen()) return;
     e.preventDefault();
     const b = document.getElementById('btn-theme-toggle');

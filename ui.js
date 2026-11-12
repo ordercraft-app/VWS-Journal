@@ -1189,9 +1189,16 @@ function maybeShowScreenshotPromo() {
     setTimeout(showScreenshotPromo, PROMO_TOAST_DELAY);
 }
 
+function screenshotPromoBlocked() {
+    // A popup is open (Add Trade, Quick trade, a question): the dashboard tip would cover its buttons
+    const modal = document.getElementById('trade-modal');
+    return (modal && modal.classList.contains('active')) || !!document.getElementById('app-dialog');
+}
+
 function showScreenshotPromo() {
     if (document.getElementById('screenshot-promo-toast')) return;
     if (activeMediaStream && activeMediaStream.active) return;
+    if (screenshotPromoBlocked()) return; // shown again next time the journal opens
 
     const toast = document.createElement('div');
     toast.id = 'screenshot-promo-toast';
@@ -1222,6 +1229,13 @@ function showScreenshotPromo() {
     // The progress bar drives the auto-hide timer (pauses while hovering)
     toast.querySelector('.promo-toast-progress').addEventListener('animationend', hideScreenshotPromo);
 
+    // Opening Add Trade or Quick trade hides the tip, so it never covers the form's buttons
+    const watch = new MutationObserver(() => { if (screenshotPromoBlocked()) hideScreenshotPromo(); });
+    const modal = document.getElementById('trade-modal');
+    if (modal) watch.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    watch.observe(document.body, { childList: true });
+    toast._watch = watch;
+
     // Double rAF so the slide-in transition actually plays
     requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('visible')));
 }
@@ -1231,5 +1245,6 @@ function hideScreenshotPromo() {
     if (!toast || toast.classList.contains('hiding')) return;
     toast.classList.add('hiding');
     toast.classList.remove('visible');
+    if (toast._watch) toast._watch.disconnect();
     setTimeout(() => toast.remove(), 500);
 }
