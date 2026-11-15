@@ -703,7 +703,12 @@ async function openTradeModal(tradeId = null) {
     tradeModal.classList.add('active');
     if (!tradeModalRelease) {
         tradeModalRelease = appDialogTrap(tradeModal.querySelector('.modal-content'), {
-            onEscape: () => closeModal(), passKeys: true, initialFocus: tradeModal.querySelector('.modal-content')
+            onEscape: () => {
+                // Esc in a tag field, a question or Find first; then edit mode ends; then the form closes (tags.js)
+                if (typeof tagsEscape === 'function' && tagsEscape()) return;
+                if (typeof tfState !== 'undefined' && tfState && tfState.edit && typeof tfTagsEdit === 'function') { tfTagsEdit(tfState.edit, false); return; }
+                closeModal();
+            }, passKeys: true, initialFocus: tradeModal.querySelector('.modal-content')
         });
     }
     setTimeout(() => { isFormDirty = false; }, 50);

@@ -27,7 +27,12 @@ function tfEmptyState() {
         target: { primary: '', sub1: '', sub2: '' },
         psychology: [],
         carried: {},
-        expanded: {}
+        expanded: {},
+        // Tags (tags.js): Find or add text per section, the section in edit mode, the highlighted find result
+        find: {},
+        findHi: {},
+        findCat: {},
+        edit: ''
     };
 }
 
@@ -258,7 +263,7 @@ function tfChipRow(container, key, options, isSelected, onPick, rerender, opts =
     if (hidden > 0) {
         row.appendChild(tfChip({
             id: `${key}::__more`,
-            label: `+ ${hidden} more`,
+            label: `Show ${hidden} more`,
             extraClass: 'chip-more',
             onClick: () => {
                 tfState.expanded[key] = true;
@@ -266,6 +271,9 @@ function tfChipRow(container, key, options, isSelected, onPick, rerender, opts =
             }
         }));
     }
+
+    // + chip at the end of the row: add a tag to this list and pick it (tags.js)
+    if (opts.add) row.appendChild(tfAddChip(opts.add));
 
     container.appendChild(row);
     return row;
@@ -283,8 +291,9 @@ function tfEmptyHint(container, text) {
 function tfRenderSingle(field, options, toneFn) {
     const rerender = () => tfRenderSingle(field, options, toneFn);
     tfRender(`tf-${field}`, el => {
+        if (field !== 'result' && tfTagsSpecial(field, el)) return;
         const opts = field === 'result' ? options : (appData.settings[field] || []);
-        if (!opts.length) {
+        if (!opts.length && field === 'result') {
             tfEmptyHint(el, 'Add options for this in Settings.');
             return;
         }
@@ -299,7 +308,7 @@ function tfRenderSingle(field, options, toneFn) {
                 tfUpdateNote(field);
             },
             rerender,
-            { tone: toneFn, legacyValues: [tfState[field]] }
+            { tone: toneFn, legacyValues: [tfState[field]], add: field === 'result' ? null : { a: { key: field, level: 'item' } } }
         );
     });
     tfUpdateNote(field);
@@ -343,9 +352,10 @@ function tfFindSetupCategory(name) {
 
 function tfRenderSetup() {
     tfRender('tf-setup', el => {
+        if (tfTagsSpecial('setup', el)) return;
         const cfg = tfSetupConfig();
         const st = tfState;
-        const cats = Object.keys(cfg).filter(cat => Array.isArray(cfg[cat]) && cfg[cat].length);
+        const cats = Object.keys(cfg).filter(cat => Array.isArray(cfg[cat]));
 
         // A stored setup that is no longer in settings stays visible
         const known = st.setup && tfAllSetups().some(s => s.item === st.setup && (!st.setupCategory || s.cat === st.setupCategory));
@@ -353,7 +363,8 @@ function tfRenderSetup() {
         if (legacyCat && !cats.includes(legacyCat)) cats.push(legacyCat);
 
         if (!cats.length) {
-            tfEmptyHint(el, 'Add setups in Settings.');
+            // No setups yet: start with a category, right here
+            tfEmptyHint(el, 'No setups yet. Add a category with the pencil, or in Settings.');
             return;
         }
 
@@ -378,7 +389,7 @@ function tfRenderSetup() {
                     tfRenderSetup();
                 },
                 tfRenderSetup,
-                { legacyValues }
+                { legacyValues, add: cat === legacyCat && !(cat in cfg) ? null : { a: { key: 'setup', level: 'gitem', cat } } }
             );
             el.appendChild(group);
         });
@@ -389,11 +400,8 @@ function tfRenderSetup() {
 
 function tfRenderPsychology() {
     tfRender('tf-psychology', el => {
+        if (tfTagsSpecial('psychology', el)) return;
         const opts = appData.settings.psychology || [];
-        if (!opts.length && !tfState.psychology.length) {
-            tfEmptyHint(el, 'Add psychology states in Settings.');
-            return;
-        }
         tfChipRow(el, 'psychology', opts,
             v => tfState.psychology.includes(v),
             v => {
@@ -403,7 +411,7 @@ function tfRenderPsychology() {
                 tfRenderPsychology();
             },
             tfRenderPsychology,
-            { legacyValues: tfState.psychology }
+            { legacyValues: tfState.psychology, add: { a: { key: 'psychology', level: 'item' } } }
         );
     });
 }
@@ -414,6 +422,7 @@ function tfRenderPsychology() {
 function tfRenderGrouped(field, settingsKey) {
     const rerender = () => tfRenderGrouped(field, settingsKey);
     tfRender(`tf-${field}`, el => {
+        if (tfTagsSpecial(settingsKey, el)) return;
         const config = appData.settings[settingsKey] || {};
         const picks = tfState[field];
         const isPicked = (cat, item) => picks.some(p => p.primary === cat && (p.sub || '') === item);
@@ -430,7 +439,7 @@ function tfRenderGrouped(field, settingsKey) {
         picks.forEach(p => { if (!cats.includes(p.primary)) cats.push(p.primary); });
 
         if (!cats.length) {
-            tfEmptyHint(el, 'Add categories for this in Settings.');
+            tfEmptyHint(el, 'No categories yet. Add one with the pencil, or in Settings.');
             return;
         }
 
@@ -457,13 +466,14 @@ function tfRenderGrouped(field, settingsKey) {
                     legacy: !(cat in config),
                     onClick: () => toggle(cat, '')
                 }));
+                if (cat in config) row.appendChild(tfAddChip({ a: { key: settingsKey, level: 'gitem', cat } }));
                 group.appendChild(row);
             } else {
                 const row = tfChipRow(group, `${field}::${cat}`, items,
                     item => isPicked(cat, item),
                     item => toggle(cat, item),
                     rerender,
-                    { legacyValues: storedItems }
+                    { legacyValues: storedItems, add: cat in config ? { a: { key: settingsKey, level: 'gitem', cat } } : null }
                 );
                 if (!(cat in config)) row.querySelectorAll('.chip').forEach(c => c.classList.add('is-legacy'));
             }
@@ -477,6 +487,7 @@ function tfRenderGrouped(field, settingsKey) {
 
 function tfRenderLocation() {
     tfRender('tf-location', el => {
+        if (tfTagsSpecial('location', el)) return;
         const tree = appData.settings.location || {};
         const st = tfState;
         const sameLoc = (l, p, s1, s2) => l.primary === p && (l.sub1 || '') === s1 && (l.sub2 || '') === s2;
@@ -523,10 +534,6 @@ function tfRenderLocation() {
         el.appendChild(tags);
 
         const primaries = Object.keys(tree);
-        if (!primaries.length) {
-            tfEmptyHint(el, 'Add location categories in Settings.');
-            return;
-        }
 
         const picker = document.createElement('div');
         picker.className = 'chip-cascade';
@@ -545,7 +552,7 @@ function tfRenderLocation() {
                 }
             },
             tfRenderLocation,
-            { hasPicks: p => st.locations.some(l => l.primary === p) }
+            { hasPicks: p => st.locations.some(l => l.primary === p), add: { a: { key: 'location', level: 'cat' } } }
         );
 
         // Level 2
@@ -565,7 +572,7 @@ function tfRenderLocation() {
                     }
                 },
                 tfRenderLocation,
-                { sub: true, hasPicks: s => sub2.length > 0 && st.locations.some(l => l.primary === p && l.sub1 === s) }
+                { sub: true, hasPicks: s => sub2.length > 0 && st.locations.some(l => l.primary === p && l.sub1 === s), add: { a: { key: 'location', level: 'sub1', cat: p } } }
             );
         }
 
@@ -577,7 +584,7 @@ function tfRenderLocation() {
                 s2 => hasLoc(p, s1, s2),
                 s2 => toggleLoc(p, s1, s2),
                 tfRenderLocation,
-                { sub: true }
+                { sub: true, add: { a: { key: 'location', level: 'sub2', cat: p } } }
             );
         }
 
@@ -589,13 +596,10 @@ function tfRenderLocation() {
 
 function tfRenderTarget() {
     tfRender('tf-target', el => {
+        if (tfTagsSpecial('target', el)) return;
         const tree = appData.settings.target || {};
         const t = tfState.target;
         const primaries = Object.keys(tree);
-        if (!primaries.length && !t.primary) {
-            tfEmptyHint(el, 'Add target categories in Settings.');
-            return;
-        }
 
         const picker = document.createElement('div');
         picker.className = 'chip-cascade';
@@ -608,7 +612,7 @@ function tfRenderTarget() {
                 tfRenderTarget();
             },
             tfRenderTarget,
-            { legacyValues: [t.primary] }
+            { legacyValues: [t.primary], add: { a: { key: 'target', level: 'cat' } } }
         );
 
         const cfg = tree[t.primary] || {};
@@ -625,7 +629,7 @@ function tfRenderTarget() {
                     tfRenderTarget();
                 },
                 tfRenderTarget,
-                { sub: true, legacyValues: [t.sub1] }
+                { sub: true, legacyValues: [t.sub1], add: (t.primary in tree) ? { a: { key: 'target', level: 'sub1', cat: t.primary } } : null }
             );
         }
 
@@ -638,7 +642,7 @@ function tfRenderTarget() {
                     tfRenderTarget();
                 },
                 tfRenderTarget,
-                { sub: true, legacyValues: [t.sub2] }
+                { sub: true, legacyValues: [t.sub2], add: (t.primary in tree) ? { a: { key: 'target', level: 'sub2', cat: t.primary } } : null }
             );
         }
 
@@ -663,3 +667,408 @@ function tfRenderAll() {
 
 // Typing in date, trade # or notes also counts as an unsaved change
 document.getElementById('trade-form').addEventListener('input', tfMarkDirty);
+
+// ---------- Tags in the form (tags.js, 2026-11-15) ----------
+// + chip at the end of every row, Find or add in the header (sections with 7+ tags),
+// and the pencil that turns one section into the list editor. Not in Quick trade.
+
+const TF_TAG_SECTIONS = [
+    { key: 'symbol', sec: 'tf-sec-symbol', body: 'tf-symbol' },
+    { key: 'marketCondition', sec: 'tf-sec-marketCondition', body: 'tf-marketCondition' },
+    { key: 'location', sec: 'tf-sec-location', body: 'tf-location' },
+    { key: 'setup', sec: 'tf-sec-setup', body: 'tf-setup' },
+    { key: 'direction', sec: 'tf-sec-direction', body: 'tf-direction' },
+    { key: 'evidence', sec: 'section-evidence', body: 'tf-evidences' },
+    { key: 'invalidation', sec: 'section-invalidation', body: 'tf-invalidations' },
+    { key: 'target', sec: 'section-target', body: 'tf-target' },
+    { key: 'psychology', sec: 'section-psychology', body: 'tf-psychology' }
+];
+const TF_TAG_RENDER = {
+    symbol: () => tfRenderSingle('symbol'),
+    marketCondition: () => tfRenderSingle('marketCondition'),
+    direction: () => tfRenderSingle('direction'),
+    setup: () => tfRenderSetup(),
+    evidence: () => tfRenderGrouped('evidences', 'evidence'),
+    invalidation: () => tfRenderGrouped('invalidations', 'invalidation'),
+    location: () => tfRenderLocation(),
+    target: () => tfRenderTarget(),
+    psychology: () => tfRenderPsychology()
+};
+
+function tfModalOpen() {
+    const m = document.getElementById('trade-modal');
+    return !!(m && m.classList.contains('active') && tfState);
+}
+
+// Pick a tag that was just added (or found)
+function tfTagPick(a, name, opts = {}) {
+    const st = tfState;
+    const key = a.key;
+    if (key === 'symbol' || key === 'marketCondition' || key === 'direction') {
+        if (opts.toggle && st[key] === name) st[key] = '';
+        else st[key] = name;
+        st.carried[key] = false;
+        tfClearMissing(key);
+    } else if (key === 'psychology') {
+        if (!st.psychology.includes(name)) st.psychology = [...st.psychology, name];
+        else if (opts.toggle) st.psychology = st.psychology.filter(p => p !== name);
+    } else if (key === 'setup') {
+        if (opts.toggle && st.setup === name && st.setupCategory === a.cat) { st.setup = ''; st.setupCategory = ''; }
+        else { st.setup = name; st.setupCategory = a.cat; }
+        tfClearMissing('setup');
+    } else if (key === 'evidence' || key === 'invalidation') {
+        const f = key === 'evidence' ? 'evidences' : 'invalidations';
+        const sub = a.level === 'cat' ? '' : name, primary = a.level === 'cat' ? name : a.cat;
+        const has = st[f].some(p => p.primary === primary && (p.sub || '') === sub);
+        if (!has) st[f] = [...st[f], { primary, sub }];
+        else if (opts.toggle) st[f] = st[f].filter(p => !(p.primary === primary && (p.sub || '') === sub));
+    } else if (key === 'location') {
+        const tree = appData.settings.location || {};
+        const has = (p, s1, s2) => st.locations.some(l => l.primary === p && (l.sub1 || '') === s1 && (l.sub2 || '') === s2);
+        const add = (p, s1, s2) => { if (!has(p, s1, s2)) st.locations = [...st.locations, { primary: p, sub1: s1, sub2: s2 }]; else if (opts.toggle) st.locations = st.locations.filter(l => !(l.primary === p && (l.sub1 || '') === s1 && (l.sub2 || '') === s2)); };
+        if (opts.path) {
+            const [p, s1 = '', s2 = ''] = opts.path;
+            st.locPath = { primary: p, sub1: s2 ? s1 : '' };
+            add(p, s1, s2);
+        } else if (a.level === 'cat') {
+            st.locPath = { primary: name, sub1: '' };
+            if (!((tree[name] || {}).sub1 || []).length) add(name, '', '');
+        } else if (a.level === 'sub1') {
+            st.locPath = { primary: a.cat, sub1: '' };
+            if (((tree[a.cat] || {}).sub2 || []).length) st.locPath.sub1 = name;
+            else add(a.cat, name, '');
+        } else {
+            const s1 = st.locPath.primary === a.cat ? st.locPath.sub1 : '';
+            if (s1) add(a.cat, s1, name);
+        }
+        tfClearMissing('location');
+    } else if (key === 'target') {
+        if (opts.path) {
+            const [p, s1 = '', s2 = ''] = opts.path;
+            st.target = { primary: p, sub1: s1, sub2: s2 };
+        } else if (a.level === 'cat') st.target = { primary: name, sub1: '', sub2: '' };
+        else if (a.level === 'sub1') st.target = { primary: a.cat, sub1: name, sub2: '' };
+        else st.target = { ...st.target, primary: a.cat, sub2: name };
+    }
+    tfMarkDirty();
+}
+
+// The + chip in a row (normal mode). Enter: add, pick, close; comma: add, pick, keep the field open.
+function tfAddChip(add) {
+    const a = add.a;
+    const k = TAGS_KINDS[a.key];
+    const where = tagsWhere(a);
+    const label = a.level === 'cat'
+        ? (k.type === 'tree' ? `Add a ${k.label}` : 'Add a category')
+        : where ? `Add to ${where}` : `Add a ${k.label}`;
+    const focusId = `tfadd|${a.key}|${a.level}|${a.cat || ''}`;
+    return tagsAddChip({
+        label, focusId, placeholder: a.level === 'cat' && k.type === 'group' ? 'Category name' : `New ${k.label}`,
+        onAdd: async (names, how) => {
+            const snap = tagsSnapshot(a.key, false);
+            const added = [];
+            let last = '';
+            names.forEach(n => {
+                const r = tagsAdd(a, n);
+                if (!r.name) return;
+                if (r.added) added.push(r.name);
+                last = r.name;
+                // single choice: only the last one is picked; multi: all of them
+                if (k.multi || k.arr) tfTagPick(a, r.name);
+            });
+            if (last && !(k.multi || k.arr)) tfTagPick(a, last);
+            const msg = !added.length ? '' : added.length === 1 ? `“${added[0]}” added${where ? ` to ${where}` : ''}.` : `${added.length} tags added${where ? ` to ${where}` : ''}.`;
+            await tagsDone(snap, msg);
+            setTimeout(() => {
+                const plus = document.querySelector(`#trade-modal [data-tags-focus="${CSS.escape(focusId)}"]`);
+                if (!plus) return;
+                if (how === 'comma' && plus.parentElement && plus.parentElement.tagsOpen) plus.parentElement.tagsOpen();
+                else plus.focus();
+            }, 0);
+        }
+    });
+}
+
+// Edit mode or a Find text: the section shows the editor or the matches instead of the rows
+function tfTagsSpecial(key, el) {
+    tfTagsTools(key);
+    if (tfState.edit === key) {
+        el.classList.add('is-editing');
+        tagsEditor(el, key, { query: tfState.find[key] || '', place: 'form' });
+        return true;
+    }
+    el.classList.remove('is-editing', 'tags-editor');
+    const q = tagsClean(tfState.find[key] || '');
+    if (!q) return false;
+    tfTagsFindResults(key, el, q);
+    return true;
+}
+
+// Header: Find or add (7+ tags) and the pencil / Done button. Built once per section, updated after.
+function tfTagsTools(key) {
+    const def = TF_TAG_SECTIONS.find(d => d.key === key);
+    const sec = def && document.getElementById(def.sec);
+    const head = sec && sec.querySelector('.chip-section-head');
+    if (!head) return;
+    let tools = head.querySelector('.tf-tools');
+    if (!tools) {
+        tools = document.createElement('div');
+        tools.className = 'tf-tools';
+        const find = document.createElement('span');
+        find.className = 'tags-find';
+        find.innerHTML = `${TAGS_ICONS.search}<input type="text" class="tags-find-input" placeholder="Find or add" aria-label="Find or add a ${TAGS_KINDS[key].label}" autocomplete="off" spellcheck="false">`;
+        const input = find.querySelector('input');
+        input.addEventListener('input', e => {
+            e.stopPropagation(); // typing here is not a change to the trade
+            tfState.find[key] = input.value;
+            tfState.findHi[key] = 0;
+            TF_TAG_RENDER[key]();
+        });
+        input.addEventListener('keydown', e => tfTagsFindKey(key, e, input));
+        const pen = document.createElement('button');
+        pen.type = 'button';
+        pen.className = 'tags-pen';
+        pen.innerHTML = TAGS_ICONS.pen;
+        pen.setAttribute('aria-label', `Edit the ${TAGS_KINDS[key].label} list`);
+        pen.title = `Edit the ${TAGS_KINDS[key].label} list`;
+        pen.addEventListener('click', () => tfTagsEdit(key, true));
+        const done = document.createElement('button');
+        done.type = 'button';
+        done.className = 'btn-primary btn-sm tags-done';
+        done.textContent = 'Done';
+        done.addEventListener('click', () => tfTagsEdit(key, false));
+        const badge = document.createElement('span');
+        badge.className = 'tags-editing-badge';
+        badge.textContent = 'Editing';
+        tools.append(badge, find, pen, done);
+        head.appendChild(tools);
+    }
+    const editing = tfState.edit === key;
+    const findBox = tools.querySelector('.tags-find');
+    findBox.hidden = tagsCount(key) < TAGS_FIND_FROM;
+    const input = tools.querySelector('input');
+    if (input.value !== (tfState.find[key] || '')) input.value = tfState.find[key] || '';
+    tools.querySelector('.tags-pen').hidden = editing;
+    tools.querySelector('.tags-done').hidden = !editing;
+    tools.querySelector('.tags-editing-badge').hidden = !editing;
+    sec.classList.toggle('is-tags-editing', editing);
+}
+
+function tfTagsEdit(key, on) {
+    const prev = tfState.edit;
+    tfState.edit = on ? key : '';
+    tfState.find[key] = '';
+    if (prev && prev !== key && TF_TAG_RENDER[prev]) { tfState.find[prev] = ''; TF_TAG_RENDER[prev](); }
+    TF_TAG_RENDER[key]();
+    const def = TF_TAG_SECTIONS.find(d => d.key === key);
+    const sec = document.getElementById(def.sec);
+    setTimeout(() => {
+        const target = on ? sec.querySelector('.tags-chip-name, .tags-cat-name, .tags-add') : sec.querySelector('.tags-pen');
+        if (target) target.focus();
+    }, 0);
+}
+
+// Everything you can pick in a section, for Find: { label, a, name, path, selected }
+function tfTagsEntries(key) {
+    const sets = appData.settings, st = tfState, k = TAGS_KINDS[key];
+    const out = [];
+    if (k.type === 'flat') {
+        (sets[key] || []).forEach(n => out.push({ label: n, a: { key, level: 'item' }, name: n,
+            selected: k.multi ? st.psychology.includes(n) : st[key] === n }));
+    } else if (k.type === 'group') {
+        const cfg = tagsConfig(key);
+        const names = Object.values(cfg).flat();
+        Object.keys(cfg).forEach(cat => {
+            const items = Array.isArray(cfg[cat]) ? cfg[cat] : [];
+            if (!items.length && key !== 'setup') {
+                const f = key === 'evidence' ? 'evidences' : 'invalidations';
+                out.push({ label: cat, a: { key, level: 'cat' }, name: cat, selected: st[f].some(p => p.primary === cat && !p.sub) });
+            }
+            items.forEach(n => {
+                const dup = names.filter(x => x === n).length > 1;
+                const sel = key === 'setup' ? st.setup === n && st.setupCategory === cat
+                    : st[key === 'evidence' ? 'evidences' : 'invalidations'].some(p => p.primary === cat && (p.sub || '') === n);
+                out.push({ label: dup ? `${cat} › ${n}` : n, a: { key, level: 'gitem', cat }, name: n, selected: sel });
+            });
+        });
+    } else {
+        const cfg = tagsConfig(key);
+        Object.keys(cfg).forEach(p => {
+            const s1 = (cfg[p] && cfg[p].sub1) || [], s2 = (cfg[p] && cfg[p].sub2) || [];
+            const paths = !s1.length ? [[p]] : s1.flatMap(a => !s2.length ? [[p, a]] : s2.map(b => [p, a, b]));
+            paths.forEach(path => {
+                const [x, y = '', z = ''] = path;
+                const sel = key === 'location'
+                    ? st.locations.some(l => l.primary === x && (l.sub1 || '') === y && (l.sub2 || '') === z)
+                    : st.target.primary === x && st.target.sub1 === y && st.target.sub2 === z;
+                out.push({ label: path.join(' › '), a: { key, level: 'cat' }, name: x, path, selected: sel });
+            });
+        });
+    }
+    return out;
+}
+
+// Where a new tag from Find goes in Location / Target: the deepest level that is open
+function tfTagsFindAddTarget(key) {
+    const k = TAGS_KINDS[key];
+    if (k.type !== 'tree') return null;
+    const cfg = tagsConfig(key);
+    const p = key === 'location' ? tfState.locPath.primary : tfState.target.primary;
+    const s1 = key === 'location' ? tfState.locPath.sub1 : tfState.target.sub1;
+    if (p && cfg[p]) {
+        if (s1 && (cfg[p].sub2 || []).length) return { key, level: 'sub2', cat: p };
+        if ((cfg[p].sub1 || []).length) return { key, level: 'sub1', cat: p };
+    }
+    return { key, level: 'cat' };
+}
+
+function tfTagsFindModel(key, q) {
+    const entries = tfTagsEntries(key);
+    const scored = entries.map((e, i) => ({ e, i, s: tagsMatches(e.label, q) || (e.path ? Math.max(...e.path.map(x => tagsMatches(x, q))) : 0) }))
+        .filter(x => x.s > 0)
+        .sort((x, y) => (y.s - x.s) || (x.i - y.i))
+        .map(x => x.e);
+    const k = TAGS_KINDS[key];
+    const exact = entries.some(e => tagsSame(e.name, q) || tagsSame(e.label, q));
+    let addTo = null, cats = [];
+    if (!exact) {
+        if (k.type === 'flat') addTo = { key, level: 'item' };
+        else if (k.type === 'group') {
+            cats = Object.keys(tagsConfig(key));
+            if (cats.length) {
+                const c = cats.includes(tfState.findCat[key]) ? tfState.findCat[key] : cats[0];
+                tfState.findCat[key] = c;
+                addTo = { key, level: 'gitem', cat: c };
+            }
+        } else addTo = tfTagsFindAddTarget(key);
+    }
+    return { results: scored.slice(0, 24), more: Math.max(0, scored.length - 24), addTo, cats };
+}
+
+function tfTagsFindResults(key, el, q) {
+    const m = tfTagsFindModel(key, q);
+    const total = m.results.length + (m.addTo ? 1 : 0);
+    const hi = Math.max(0, Math.min(tfState.findHi[key] || 0, Math.max(0, total - 1)));
+    tfState.findHi[key] = hi;
+    const row = document.createElement('div');
+    row.className = 'chip-row tags-find-row';
+    m.results.forEach((e, i) => {
+        const c = tfChip({
+            id: `find::${key}::${e.label}`, label: e.label, selected: e.selected,
+            extraClass: i === hi ? 'is-find-hi' : '',
+            onClick: () => tfTagsFindPick(key, e)
+        });
+        row.appendChild(c);
+    });
+    if (m.addTo) {
+        const where = tagsWhere(m.addTo);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'tags-add has-label' + (hi === m.results.length ? ' is-find-hi' : '');
+        b.innerHTML = `${TAGS_ICONS.plus}<span></span>`;
+        b.querySelector('span').textContent = `Add “${q}”${where && TAGS_KINDS[key].type === 'tree' ? ` to ${where}` : ''}`;
+        b.addEventListener('click', () => tfTagsFindAdd(key, q));
+        row.appendChild(b);
+    }
+    el.appendChild(row);
+    if (m.addTo && m.cats.length) {
+        const cr = document.createElement('div');
+        cr.className = 'tags-find-cats';
+        const lab = document.createElement('span');
+        lab.className = 'tags-find-in';
+        lab.textContent = 'in';
+        cr.appendChild(lab);
+        m.cats.forEach(c => {
+            cr.appendChild(tfChip({ id: `findcat::${key}::${c}`, label: c, selected: false, extraClass: c === tfState.findCat[key] ? 'is-find-cat' : '',
+                onClick: () => { tfState.findCat[key] = c; TF_TAG_RENDER[key](); } }));
+        });
+        el.appendChild(cr);
+    }
+    const hint = document.createElement('p');
+    hint.className = 'chip-empty tags-find-hint';
+    hint.textContent = !m.results.length
+        ? (m.cats.length > 1 ? 'No match. ← → picks the category, Enter adds it there and picks it.' : 'No match. Enter adds it and picks it.')
+        : `${m.more ? `${m.more} more match. ` : ''}← → move between matches · Enter picks the one with the white ring · Esc clears`;
+    el.appendChild(hint);
+}
+
+function tfTagsFindKey(key, e, input) {
+    e.stopPropagation();
+    if (e.isComposing) return;
+    const q = tagsClean(input.value);
+    if (!q) return;
+    const m = tfTagsFindModel(key, q);
+    const total = m.results.length + (m.addTo ? 1 : 0);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const d = e.key === 'ArrowLeft' ? -1 : 1;
+        if (!m.results.length && m.cats.length > 1) {
+            const i = m.cats.indexOf(tfState.findCat[key]);
+            tfState.findCat[key] = m.cats[(i + d + m.cats.length) % m.cats.length];
+        } else if (total) {
+            tfState.findHi[key] = ((tfState.findHi[key] || 0) + d + total) % total;
+        }
+        TF_TAG_RENDER[key]();
+        return;
+    }
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const hi = tfState.findHi[key] || 0;
+        if (hi < m.results.length) tfTagsFindPick(key, m.results[hi]);
+        else if (m.addTo) tfTagsFindAdd(key, q);
+    }
+}
+
+function tfTagsFindClear(key) {
+    tfState.find[key] = '';
+    tfState.findHi[key] = 0;
+    TF_TAG_RENDER[key]();
+    const def = TF_TAG_SECTIONS.find(d => d.key === key);
+    const input = document.querySelector(`#${def.sec} .tags-find-input`);
+    if (input) { input.value = ''; input.focus(); }
+}
+
+function tfTagsFindPick(key, e) {
+    tfTagPick(e.a, e.name, { path: e.path });
+    tfTagsFindClear(key);
+}
+
+async function tfTagsFindAdd(key, q) {
+    const m = tfTagsFindModel(key, q);
+    if (!m.addTo) return;
+    const a = m.addTo;
+    const snap = tagsSnapshot(key, false);
+    const r = tagsAdd(a, q);
+    if (!r.name) return;
+    tfTagPick(a, r.name);
+    const where = tagsWhere(a);
+    tfState.find[key] = '';
+    tfState.findHi[key] = 0;
+    await tagsDone(snap, r.added ? `“${r.name}” added${where ? ` to ${where}` : ''}.` : '');
+    tfTagsFindClear(key);
+}
+
+// The open trade, for renames from tags.js: as a trade object and back
+tagsForm = {
+    get: () => tfModalOpen() ? tfGetData() : null,
+    set: d => {
+        if (!tfState) return;
+        const st = tfState;
+        st.symbol = d.symbol || ''; st.marketCondition = d.marketCondition || ''; st.direction = d.direction || '';
+        st.setup = d.setup || ''; st.setupCategory = d.setupCategory || '';
+        st.locations = (d.locations || []).map(l => ({ primary: l.primary, sub1: l.sub1 || '', sub2: l.sub2 || '' }));
+        st.evidences = (d.evidences || []).map(x => ({ primary: x.primary, sub: x.sub || '' }));
+        st.invalidations = (d.invalidations || []).map(x => ({ primary: x.primary, sub: x.sub || '' }));
+        st.target = { primary: d.target || '', sub1: d.targetSub1 || '', sub2: d.targetSub2 || '' };
+        st.psychology = [...(d.psychology || [])];
+        const tree = appData.settings.location || {};
+        if (st.locPath.primary && !tree[st.locPath.primary]) st.locPath = st.locations.length ? { primary: st.locations[0].primary, sub1: st.locations[0].sub1 } : { primary: '', sub1: '' };
+        if (typeof rulesFormSync === 'function') rulesFormSync();
+    }
+};
+
+tagsRefreshers.add(() => {
+    if (!tfModalOpen()) return;
+    tfRenderAll();
+    tfUpdateSaveState();
+});

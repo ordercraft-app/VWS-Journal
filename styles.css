@@ -1996,3 +1996,111 @@ html.scalp-on .scalp-day-bar { box-shadow: inset 0 0 0 1px color-mix(in srgb, va
 .shots-strip.is-narrow .shots-chip-img { cursor: zoom-in; }
 .shots-strip.is-narrow .shots-chip.is-on .shots-chip-img { border-color: transparent; }
 .shots-strip.is-narrow .shots-chip-img:hover, .shots-strip.is-narrow .shots-chip-img:focus-visible { border-color: var(--accent); }
+
+/* ---------- Tags: + chip, Find or add, pencil edit mode, Settings lists (tags.js, 2026-11-15) ---------- */
+.chip-section-head:has(.tf-tools) { align-items: center; min-height: 30px; }
+.chip-section-head > .tf-tools { margin-left: auto; }
+.chip-section-head > .chip-section-note + .tf-tools { margin-left: 8px; }
+.chip-section-head > .chip-section-note:has(+ .tf-tools) { margin-left: auto; }
+.tf-tools, .tags-tools { display: inline-flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; }
+.tf-tools [hidden], .tags-tools [hidden] { display: none !important; }
+.tags-editing-badge { font-size: 10.5px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 100px; padding: 2px 8px; }
+.tags-find { display: inline-flex; align-items: center; gap: 6px; height: 30px; box-sizing: border-box; padding: 0 12px; border-radius: 100px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); }
+.tags-find:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.tags-find input { width: 104px; background: transparent; border: none; outline: none; color: var(--text-main); font: inherit; font-size: 12px; padding: 0; }
+.tags-find input::placeholder { color: var(--text-muted); }
+.tags-pen { width: 30px; height: 30px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); cursor: pointer; padding: 0; }
+.tags-pen:hover { color: var(--text-main); border-color: var(--border-hover); }
+.tags-pen:focus-visible, .tags-add:focus-visible, .tags-chip-name:focus-visible, .tags-cat-name:focus-visible, .tags-chip-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tags-done { height: 30px; padding: 0 14px; }
+
+/* + chip: round, outlined (dashed is for old tags and “Show more”) */
+.tags-add-wrap { display: inline-flex; align-items: center; }
+.tags-add { height: 34px; min-width: 34px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0; border-radius: 100px; border: 1px solid var(--border-color); background: transparent; color: var(--text-muted); font-family: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.tags-add.has-label { padding: 0 14px 0 12px; }
+.tags-add:hover { color: var(--text-main); border-color: var(--border-hover); background: var(--chip-hover, var(--bg-hover)); }
+.tags-add[hidden] { display: none; }
+.chip.is-find-hi, .tags-add.is-find-hi { box-shadow: 0 0 0 2px var(--text-main); }
+.chip.is-find-cat { border-color: var(--text-main); }
+.tags-find-cats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.tags-find-in { font-size: 12px; color: var(--text-muted); }
+.tags-find-hint { margin-top: 10px; }
+
+/* Text field in a row */
+.tags-field { display: inline-flex; align-items: center; gap: 6px; height: 34px; box-sizing: border-box; padding: 0 6px 0 14px; border-radius: 100px; background: var(--bg-input); border: 1px solid var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); max-width: 100%; }
+.tags-field input { min-width: 60px; background: transparent; border: none; outline: none; color: var(--text-main); font: inherit; font-size: 13px; padding: 0; }
+.tags-field input::placeholder { color: var(--text-muted); }
+.tags-key { font-size: 11px; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 4px; padding: 1px 6px; flex: none; }
+
+/* Edit mode (Add Trade) */
+.chip-box.is-editing { border: 1px dashed var(--border-hover); }
+
+/* The list editor (Add Trade edit mode + Settings) */
+.tags-editor { display: flex; flex-direction: column; gap: 12px; }
+.tags-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tags-group { display: grid; grid-template-columns: 172px minmax(0, 1fr); gap: 10px; align-items: start; }
+.tags-group.is-tree + .tags-group.is-tree { border-top: 1px solid var(--divider-bg); padding-top: 12px; }
+.tags-group[hidden], .tags-chip[hidden] { display: none; }
+.tags-group-items { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tags-level { display: flex; flex-direction: column; gap: 6px; }
+.tags-level-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.tags-chip { display: inline-flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 10px; border-radius: 100px; background: var(--chip-bg, var(--bg-input)); border: 1px solid var(--border-color); color: var(--text-main); font-size: 13px; white-space: nowrap; max-width: 100%; }
+.tags-chip.has-hint { height: auto; padding: 0; border: none; background: transparent; flex-direction: column; align-items: flex-start; gap: 6px; }
+.tags-chip:hover { border-color: var(--border-hover); }
+.tags-grip { display: inline-flex; color: var(--text-muted); cursor: grab; opacity: .8; }
+.tags-grip:active { cursor: grabbing; }
+.tags-chip-name, .tags-cat-name { background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: text; border-radius: 4px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+.tags-chip-x { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background: none; color: var(--text-muted); cursor: pointer; flex: none; }
+.tags-chip-x:hover { color: var(--text-main); background: var(--bg-hover); }
+.tags-cat { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; box-sizing: border-box; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-main); font-size: 12px; font-weight: 600; flex-wrap: wrap; }
+.tags-cat .tags-cat-name { white-space: normal; overflow-wrap: anywhere; }
+.tags-cat:has(.tags-field) { border: none; padding: 0; }
+.tags-rename-hint { font-size: 12px; color: var(--text-muted); white-space: normal; line-height: 1.4; }
+.tags-dragging { opacity: .4; }
+.tags-drop { box-shadow: -3px 0 0 0 var(--accent); }
+.tags-group.tags-drop { box-shadow: 0 -2px 0 0 var(--accent); }
+.tags-blink { animation: tags-blink .7s ease-out 1; }
+@keyframes tags-blink { 0%, 60% { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); } 100% { box-shadow: none; } }
+.tags-add-cat { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-left: 182px; }
+.tags-add-cat-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.tags-confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 12px; border-radius: 10px; background: color-mix(in srgb, var(--text-main) 4%, transparent); border: 1px solid var(--border-color); }
+.tags-confirm-text { flex: 1; min-width: 200px; font-size: 13px; line-height: 1.5; color: var(--text-main); }
+.tags-danger { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); border-radius: 8px; font-weight: 600; cursor: pointer; }
+.tags-danger:hover { background: color-mix(in srgb, var(--danger) 22%, transparent); }
+
+/* Hover label: how many trades use a tag */
+.tags-tip { position: fixed; z-index: 500; pointer-events: none; padding: 5px 10px; border-radius: 8px; background: var(--bg-hover); border: 1px solid var(--border-hover); color: var(--text-main); font-size: 12px; font-weight: 500; white-space: nowrap; box-shadow: 0 8px 20px var(--shadow-md); opacity: 0; transition: opacity .12s ease-out; }
+.tags-tip.is-on { opacity: 1; }
+.tags-tip::after { content: ''; position: absolute; left: var(--tip-x, 50%); top: 100%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--border-hover); }
+.tags-tip.is-below::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--border-hover); }
+[data-theme="light"] .tags-tip { background: #FFFFFF; }
+
+/* Settings › Journal cards */
+.setting-category-card .tags-editor { margin-top: 2px; }
+.setting-cat-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.setting-cat-head .setting-cat-title { margin-bottom: 0; }
+
+@media (max-width: 760px) {
+    .tags-group { grid-template-columns: 1fr; }
+    .tags-add-cat { padding-left: 0; }
+    .tags-find input { width: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tags-tip { transition: none; }
+    .tags-blink { animation: none; border-color: var(--accent); }
+}
+.chip-split .chip-section-head { min-height: 30px; align-items: center; }
+.settings-find-add { display: flex; flex-direction: column; gap: 8px; }
+.settings-find-add .tags-find-cats { margin-top: 0; }
+
+/* Settings: tags that only live in older trades (tags.js, 2026-11-15) */
+.tags-old { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--divider-bg); }
+.tags-old-title { font-size: 12px; color: var(--text-muted); }
+.tags-old-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tags-old-chip { display: inline-flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 4px 0 12px; border-radius: 100px; border: 1px dashed var(--border-hover); color: var(--text-muted); font-size: 13px; white-space: nowrap; max-width: 100%; }
+.tags-old-chip.is-renaming { border: none; padding: 0; }
+.tags-old-name { background: none; border: none; padding: 0; color: var(--text-main); font: inherit; cursor: text; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; }
+.tags-old-cat { color: var(--text-muted); }
+.tags-old-back { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 100px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.tags-old-back:hover { border-color: var(--border-hover); }
+.tags-old-name:focus-visible, .tags-old-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

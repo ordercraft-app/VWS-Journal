@@ -614,7 +614,7 @@ function rulesScopeKey(setup) {
     return Object.keys(rules).find(k => k !== RULES_ALL && k.trim().toLowerCase() === lower) || null;
 }
 
-// Called when a list item is renamed in Settings (createPillBox). When it is a
+// Called when a list item is renamed (tags.js: Settings or Add Trade). When it is a
 // setup, its rules move along to the new name. Trades keep their own copy.
 function rulesOnListRename(list, oldName, newName) {
     if (!rulesFeatureOn || !oldName || !newName || oldName === newName) return;

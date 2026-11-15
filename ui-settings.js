@@ -2,354 +2,176 @@
 // Split off from ui.js. Loaded right after ui.js.
 
 // --- Settings UI Architecture ---
+// Every list card (Symbol … Psychology) uses the list editor from tags.js: the same chips,
+// + chips, rename (trades follow), merge, × with Undo and questions inside the card as the
+// pencil edit mode in Add Trade. Since 2026-11-15 (before: pill boxes and name fields).
 
-function createPillBox(dataArray, onChange, label) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'pill-box';
-    let draggedIndex = null;
-    
-    function render() {
-        wrapper.innerHTML = '';
-        dataArray.forEach((item, index) => {
-            const pill = document.createElement('div');
-            pill.className = 'pill';
-            pill.draggable = true;
-            
-            // Drag Drop logic for pills
-            pill.ondragstart = (e) => {
-                e.stopPropagation(); // STOP event from reaching the row drag handler
-                draggedIndex = index;
-                e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => pill.classList.add('dragging'), 0);
-            };
-            pill.ondragend = () => {
-                draggedIndex = null;
-                pill.classList.remove('dragging');
-                wrapper.querySelectorAll('.pill').forEach(p => p.classList.remove('drag-over'));
-            };
-            pill.ondragover = (e) => {
-                e.preventDefault();
-                if (draggedIndex !== null && draggedIndex !== index) {
-                    pill.classList.add('drag-over');
-                }
-            };
-            pill.ondragleave = () => pill.classList.remove('drag-over');
-            pill.ondrop = (e) => {
-                e.preventDefault();
-                pill.classList.remove('drag-over');
-                if (draggedIndex !== null && draggedIndex !== index) {
-                    const draggedItem = dataArray.splice(draggedIndex, 1)[0];
-                    dataArray.splice(index, 0, draggedItem);
-                    onChange();
-                    render();
-                }
-            };
-            
-            const textNode = document.createElement('span');
-            textNode.textContent = item;
-            textNode.className = 'pill-text';
-            textNode.title = "Click to edit, Drag to reorder";
-            
-            textNode.onclick = (e) => {
-                e.stopPropagation();
-                textNode.contentEditable = true;
-                pill.draggable = false; 
-                textNode.focus();
-            };
-            
-            textNode.onblur = () => {
-                textNode.contentEditable = false;
-                pill.draggable = true;
-                const newVal = textNode.textContent.trim();
-                if (newVal && newVal !== item && !dataArray.includes(newVal)) {
-                    dataArray[index] = newVal;
-                    // A renamed setup keeps its rules (rules.js)
-                    if (typeof rulesOnListRename === 'function') rulesOnListRename(dataArray, item, newVal);
-                    onChange();
-                    render();
-                } else if (!newVal) {
-                    dataArray.splice(index, 1);
-                    onChange();
-                    render();
-                } else {
-                    textNode.textContent = item;
-                }
-            };
-            
-            textNode.onkeydown = (e) => {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    textNode.blur();
-                }
-            };
-            
-            const closeBtn = document.createElement('span');
-            closeBtn.innerHTML = '&times;';
-            closeBtn.className = 'pill-close';
-            closeBtn.onclick = (e) => {
-                e.stopPropagation();
-                dataArray.splice(index, 1);
-                onChange();
-                render();
-            };
-            
-            pill.appendChild(textNode);
-            pill.appendChild(closeBtn);
-            wrapper.appendChild(pill);
-        });
-        
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'pill-input-field';
-        input.placeholder = dataArray.length === 0 ? 'Type & press comma...' : '';
-        input.setAttribute('aria-label', label || 'Add an item');
-        
-        input.onkeydown = (e) => {
-            if (e.key === ',' || e.key === 'Enter') {
-                e.preventDefault();
-                let val = input.value.trim().replace(/,+$/, '');
-                if (val && !dataArray.includes(val)) {
-                    dataArray.push(val);
-                    onChange();
-                    render();
-                    wrapper.querySelector('.pill-input-field').focus();
-                } else {
-                    input.value = '';
-                }
-            }
-        };
-        
-        wrapper.appendChild(input);
-        wrapper.onclick = () => input.focus();
-    }
-    
-    render();
-    return wrapper;
-}
+const settingsTagCards = new Map(); // key → { body, query, findBox }
 
-function renderComplexSetting(title, configObj, type, onChange, toggleKey = null) {
+function renderTagsSetting(title, key, toggleKey = null) {
     const container = document.createElement('div');
     container.className = 'setting-category-card';
-    
-    const headerWrapper = document.createElement('div');
-    headerWrapper.style.display = 'flex';
-    headerWrapper.style.justifyContent = 'space-between';
-    headerWrapper.style.alignItems = 'center';
-    headerWrapper.style.marginBottom = '16px';
+    container.dataset.tagsKey = key;
 
+    const head = document.createElement('div');
+    head.className = 'setting-cat-head';
     const header = document.createElement('h2'); // a11y: h2 under the page h1
     header.textContent = title;
     header.className = 'setting-cat-title';
-    header.style.marginBottom = '0';
-    headerWrapper.appendChild(header);
+    head.appendChild(header);
+    const tools = document.createElement('div');
+    tools.className = 'tags-tools';
+    head.appendChild(tools);
+    container.appendChild(head);
 
-    const itemsWrapper = document.createElement('div');
+    const body = document.createElement('div');
+    const card = { body, query: '', findBox: null, cat: '' };
+    settingsTagCards.set(key, card);
+
+    // Find or add (7+ tags)
+    const findBox = document.createElement('span');
+    findBox.className = 'tags-find';
+    findBox.innerHTML = `${TAGS_ICONS.search}<input type="text" class="tags-find-input" placeholder="Find or add" aria-label="Find or add in ${title}" autocomplete="off" spellcheck="false">`;
+    const input = findBox.querySelector('input');
+    input.addEventListener('input', () => { card.query = input.value; settingsTagRender(key); });
+    input.addEventListener('keydown', e => settingsTagFindKey(key, e, input));
+    card.findBox = findBox;
+    tools.appendChild(findBox);
 
     if (toggleKey) {
         if (!appData.settings.features) appData.settings.features = {};
         if (appData.settings.features[toggleKey] === undefined) appData.settings.features[toggleKey] = true;
-        
         const isEnabled = appData.settings.features[toggleKey];
         const toggleBtn = document.createElement('button');
         toggleBtn.className = isEnabled ? 'btn-secondary btn-sm' : 'btn-primary btn-sm';
         toggleBtn.textContent = isEnabled ? 'Disable' : 'Enable';
-        toggleBtn.onclick = () => {
+        toggleBtn.onclick = async () => {
             appData.settings.features[toggleKey] = !appData.settings.features[toggleKey];
-            onChange();
+            await autoSave();
             renderSettingsUI();
         };
-        headerWrapper.appendChild(toggleBtn);
-        if (!isEnabled) itemsWrapper.style.display = 'none';
+        tools.appendChild(toggleBtn);
+        if (!isEnabled) { body.style.display = 'none'; findBox.hidden = true; }
     }
 
-    container.appendChild(headerWrapper);
-    itemsWrapper.className = 'setting-items-wrapper';
-    container.appendChild(itemsWrapper);
-    
-    let draggedRowKey = null;
+    container.appendChild(body);
+    settingsTagRender(key);
+    return container;
+}
 
-    const renderItems = () => {
-        itemsWrapper.innerHTML = '';
-        Object.keys(configObj).forEach((key) => {
+function settingsTagRender(key) {
+    const card = settingsTagCards.get(key);
+    if (!card || !card.body.isConnected && card.body.parentElement === null) return;
+    const disabled = card.body.style.display === 'none';
+    card.findBox.hidden = disabled || tagsCount(key) < TAGS_FIND_FROM;
+    tagsEditor(card.body, key, { query: card.query, place: 'settings' });
+    // Tags that only live in older trades (tags.js)
+    if (!card.old) card.old = {};
+    tagsOldLine(card.body, key, card.old, { query: card.query });
+    // No match in a card with categories: choose where it goes
+    const q = tagsClean(card.query);
+    card.body.querySelectorAll('.settings-find-add').forEach(x => x.remove());
+    if (!q) return;
+    const k = TAGS_KINDS[key];
+    const hits = card.body.querySelectorAll('.tags-chip:not([hidden]), .tags-group:not([hidden]) .tags-cat').length;
+    const exact = settingsTagAll(key).some(n => tagsSame(n, q));
+    const box = document.createElement('div');
+    box.className = 'settings-find-add';
+    const hint = document.createElement('p');
+    hint.className = 'chip-empty';
+    if (exact) {
+        hint.textContent = 'Enter goes to it.';
+    } else if (k.type === 'flat') {
+        hint.textContent = hits ? `Enter goes to the first match. No exact match: click + to add “${q}”.` : `No match. Enter adds “${q}”.`;
+    } else if (k.type === 'group') {
+        const cats = Object.keys(tagsConfig(key));
+        if (!cats.includes(card.cat)) card.cat = cats[0] || '';
+        if (cats.length) {
             const row = document.createElement('div');
-            row.className = 'setting-row';
-            
-            // Row drag and drop (Level 1)
-            row.ondragstart = (e) => {
-                draggedRowKey = key;
-                e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => row.classList.add('dragging-row'), 0);
-            };
-            row.ondragend = () => {
-                draggedRowKey = null;
-                row.draggable = false; 
-                row.classList.remove('dragging-row');
-                itemsWrapper.querySelectorAll('.setting-row').forEach(r => r.classList.remove('row-drag-over'));
-            };
-            row.ondragover = (e) => {
-                e.preventDefault();
-                if (draggedRowKey && draggedRowKey !== key) {
-                    row.classList.add('row-drag-over');
-                }
-            };
-            row.ondragleave = () => row.classList.remove('row-drag-over');
-            row.ondrop = (e) => {
-                e.preventDefault();
-                row.classList.remove('row-drag-over');
-                if (draggedRowKey && draggedRowKey !== key) {
-                    const keysArray = Object.keys(configObj);
-                    const draggedIdx = keysArray.indexOf(draggedRowKey);
-                    const dropIdx = keysArray.indexOf(key);
-                    
-                    keysArray.splice(draggedIdx, 1);
-                    keysArray.splice(dropIdx, 0, draggedRowKey);
-                    
-                    const newObj = {};
-                    keysArray.forEach(k => newObj[k] = configObj[k]);
-                    
-                    Object.keys(configObj).forEach(k => delete configObj[k]);
-                    Object.keys(newObj).forEach(k => configObj[k] = newObj[k]);
-                    
-                    onChange();
-                    renderItems();
-                }
-            };
-            
-            const level1Div = document.createElement('div');
-            level1Div.className = 'setting-level-1';
-            
-            const dragHandle = document.createElement('div');
-            dragHandle.innerHTML = DRAG_ICON_SVG;
-            dragHandle.className = 'row-drag-handle';
-            dragHandle.title = "Drag to reorder category";
-            
-            dragHandle.onmousedown = () => { row.draggable = true; };
-            dragHandle.onmouseup = () => { row.draggable = false; };
-            dragHandle.onmouseleave = () => { row.draggable = false; };
-            
-            const keyInput = document.createElement('input');
-            keyInput.type = 'text';
-            keyInput.className = 'linear-input level-1-input';
-            keyInput.value = key;
-            keyInput.setAttribute('aria-label', `${title}: name of “${key}”`);
-            
-            const delLvl1Btn = document.createElement('button');
-            delLvl1Btn.innerHTML = '&times;';
-            delLvl1Btn.className = 'btn-icon delete-level-1';
-            delLvl1Btn.onclick = async () => {
-                if (await appConfirm({ title: `Delete the category “${key}”?`, message: 'The category and its options are removed from your lists. Trades you already logged keep what they had.', confirmText: 'Delete', icon: 'trash' })) {
-                    delete configObj[key];
-                    onChange();
-                    renderItems();
-                }
-            };
-            
-            level1Div.appendChild(dragHandle);
-            level1Div.appendChild(keyInput);
-            level1Div.appendChild(delLvl1Btn);
-            row.appendChild(level1Div);
-            
-            keyInput.onblur = () => {
-                const newKey = keyInput.value.trim();
-                if(newKey && newKey !== key && !configObj[newKey]) {
-                    configObj[newKey] = configObj[key];
-                    delete configObj[key];
-                    onChange();
-                    renderItems();
-                } else {
-                    keyInput.value = key; 
-                }
-            };
-
-            const subsDiv = document.createElement('div');
-            subsDiv.className = 'setting-subs';
-            
-            if (type === '3-level') {
-                const sub1Label = document.createElement('label');
-                sub1Label.textContent = 'Level 1';
-                subsDiv.appendChild(sub1Label);
-                subsDiv.appendChild(createPillBox(configObj[key].sub1, onChange, `${title} › ${key}, level 1: add an item`));
-                
-                const sub2Label = document.createElement('label');
-                sub2Label.textContent = 'Level 2';
-                subsDiv.appendChild(sub2Label);
-                subsDiv.appendChild(createPillBox(configObj[key].sub2, onChange, `${title} › ${key}, level 2: add an item`));
-            } else if (type === '2-level') {
-                const subLabel = document.createElement('label');
-                subLabel.textContent = 'Level 1';
-                subsDiv.appendChild(subLabel);
-                subsDiv.appendChild(createPillBox(configObj[key], onChange, `${title} › ${key}: add an item`));
-            }
-            
-            row.appendChild(subsDiv);
-            itemsWrapper.appendChild(row);
-        });
-        
-        const addBtn = document.createElement('button');
-        addBtn.className = 'btn-secondary btn-sm add-level-1-btn';
-        addBtn.textContent = '+ Add Category';
-        addBtn.onclick = () => {
-            let newKey = 'New Category';
-            let counter = 1;
-            while(configObj[newKey]) {
-                newKey = `New Category ${counter}`;
-                counter++;
-            }
-            if (type === '3-level') {
-                configObj[newKey] = { sub1: [], sub2: [] };
-            } else {
-                configObj[newKey] = [];
-            }
-            onChange();
-            renderItems();
-        };
-        itemsWrapper.appendChild(addBtn);
-    };
-    
-    renderItems();
-    return container;
-}
-
-function renderSimpleSetting(title, dataArray, onChange, toggleKey = null) {
-    const container = document.createElement('div');
-    container.className = 'setting-category-card';
-    
-    const headerWrapper = document.createElement('div');
-    headerWrapper.style.display = 'flex';
-    headerWrapper.style.justifyContent = 'space-between';
-    headerWrapper.style.alignItems = 'center';
-    headerWrapper.style.marginBottom = '16px';
-
-    const header = document.createElement('h2'); // a11y: h2 under the page h1
-    header.textContent = title;
-    header.className = 'setting-cat-title';
-    header.style.marginBottom = '0';
-    headerWrapper.appendChild(header);
-    
-    container.appendChild(headerWrapper);
-
-    const pillBox = createPillBox(dataArray, onChange, `${title}: add an item`);
-
-    if (toggleKey) {
-        if (!appData.settings.features) appData.settings.features = {};
-        if (appData.settings.features[toggleKey] === undefined) appData.settings.features[toggleKey] = true;
-
-        const isEnabled = appData.settings.features[toggleKey];
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = isEnabled ? 'btn-secondary btn-sm' : 'btn-primary btn-sm';
-        toggleBtn.textContent = isEnabled ? 'Disable' : 'Enable';
-        toggleBtn.onclick = () => {
-            appData.settings.features[toggleKey] = !appData.settings.features[toggleKey];
-            onChange();
-            renderSettingsUI();
-        };
-        headerWrapper.appendChild(toggleBtn);
-        if (!isEnabled) pillBox.style.display = 'none';
+            row.className = 'tags-find-cats';
+            const add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'tags-add has-label' + (hits ? '' : ' is-find-hi');
+            add.innerHTML = `${TAGS_ICONS.plus}<span></span>`;
+            add.querySelector('span').textContent = `Add “${q}”`;
+            add.addEventListener('click', () => settingsTagFindAdd(key));
+            row.appendChild(add);
+            const lab = document.createElement('span');
+            lab.className = 'tags-find-in';
+            lab.textContent = 'in';
+            row.appendChild(lab);
+            cats.forEach(c => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'chip' + (c === card.cat ? ' is-find-cat' : '');
+                b.textContent = c;
+                b.addEventListener('click', () => { card.cat = c; settingsTagRender(key); });
+                row.appendChild(b);
+            });
+            box.appendChild(row);
+        }
+        hint.textContent = hits ? 'Enter goes to the first match.' : (cats.length > 1 ? 'No match. ← → picks the category, Enter adds it there.' : 'No match. Enter adds it.');
+    } else {
+        hint.textContent = hits ? 'Enter goes to the first match.' : 'No match. Use the + in the row where it belongs.';
     }
-
-    container.appendChild(pillBox);
-    return container;
+    box.appendChild(hint);
+    card.body.prepend(box);
 }
+
+function settingsTagAll(key) {
+    const k = TAGS_KINDS[key], cfg = tagsConfig(key);
+    if (k.type === 'flat') return [...cfg];
+    if (k.type === 'group') return [...Object.keys(cfg), ...Object.values(cfg).flat()];
+    return Object.keys(cfg).flatMap(c => [c, ...((cfg[c] || {}).sub1 || []), ...((cfg[c] || {}).sub2 || [])]);
+}
+
+function settingsTagFindKey(key, e, input) {
+    const card = settingsTagCards.get(key);
+    if (e.key === 'Escape') {
+        if (input.value) { e.preventDefault(); e.stopPropagation(); input.value = ''; card.query = ''; settingsTagRender(key); }
+        return;
+    }
+    const q = tagsClean(input.value);
+    if (!q) return;
+    const k = TAGS_KINDS[key];
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && k.type === 'group' && !card.body.querySelector('.tags-chip:not([hidden])')) {
+        e.preventDefault();
+        const cats = Object.keys(tagsConfig(key));
+        const i = cats.indexOf(card.cat);
+        card.cat = cats[(i + (e.key === 'ArrowLeft' ? -1 : 1) + cats.length) % cats.length];
+        settingsTagRender(key);
+        return;
+    }
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    // Exact name first, then the first match
+    const names = [...card.body.querySelectorAll('.tags-chip:not([hidden]) .tags-chip-name, .tags-group:not([hidden]) .tags-cat-name')];
+    const hit = names.find(b => tagsSame(b.textContent, q)) || names.find(b => tagsMatches(b.textContent, q) > 0);
+    if (hit) { hit.focus(); return; }
+    settingsTagFindAdd(key);
+}
+
+async function settingsTagFindAdd(key) {
+    const card = settingsTagCards.get(key);
+    const q = tagsClean(card.query);
+    const k = TAGS_KINDS[key];
+    if (!q || k.type === 'tree') return;
+    const a = k.type === 'flat' ? { key, level: 'item' } : { key, level: 'gitem', cat: card.cat };
+    if (k.type === 'group' && !card.cat) return;
+    const snap = tagsSnapshot(key, false);
+    const r = tagsAdd(a, q);
+    card.query = '';
+    const input = card.findBox.querySelector('input');
+    input.value = '';
+    const where = tagsWhere(a);
+    await tagsDone(snap, r.added ? `“${r.name}” added${where ? ` to ${where}` : ''}.` : '');
+    input.focus();
+}
+
+// After any list change (here or in Add Trade): re-render the cards that are on screen
+tagsRefreshers.add(() => {
+    settingsTagCards.forEach((card, key) => { if (card.body.isConnected) settingsTagRender(key); });
+});
 
 // Re-rendering rebuilds the whole settings page. Keep the scroll position so
 // toggling a category (Enable/Disable) doesn't throw you back to the top.
@@ -430,20 +252,20 @@ function renderSettingsContent() {
         if (typeof systemSettingsEl === 'function') settingsContainer.appendChild(systemSettingsEl());
         const banner = document.createElement('div');
         banner.className = 'info-banner';
-        banner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><span><strong>Tip:</strong> Add a parameter by typing and pressing <strong>comma ( , )</strong> or <strong>Enter</strong>. You can easily drag & drop parameters and categories to reorder them!</span>`;
+        banner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><span><strong>Tip:</strong> These are the same lists as in Add Trade. Click + and type: <strong>Enter</strong> or <strong>comma ( , )</strong> adds it, the field stays open for the next one. Click a name to rename it (your trades follow), drag to reorder, point at a tag to see how many trades use it. Every change has Undo.</span>`;
         settingsContainer.appendChild(banner);
 
-        settingsContainer.appendChild(renderSimpleSetting('Symbol', appData.settings.symbol, onSettingsChange));
+        settingsContainer.appendChild(renderTagsSetting('Symbol', 'symbol'));
         // Same order as the add/edit trade form
-        settingsContainer.appendChild(renderSimpleSetting('Market Condition', appData.settings.marketCondition, onSettingsChange));
-        settingsContainer.appendChild(renderComplexSetting('Location', appData.settings.location, '3-level', onSettingsChange));
-        settingsContainer.appendChild(renderComplexSetting('Setup', appData.settings.setup, '2-level', onSettingsChange));
-        settingsContainer.appendChild(renderSimpleSetting('Direction', appData.settings.direction, onSettingsChange));
-        settingsContainer.appendChild(renderComplexSetting('Evidence', appData.settings.evidence, '2-level', onSettingsChange, 'evidence'));
-        settingsContainer.appendChild(renderComplexSetting('Invalidation', appData.settings.invalidation, '2-level', onSettingsChange, 'invalidation'));
-        settingsContainer.appendChild(renderComplexSetting('Target', appData.settings.target, '3-level', onSettingsChange, 'target'));
+        settingsContainer.appendChild(renderTagsSetting('Market Condition', 'marketCondition'));
+        settingsContainer.appendChild(renderTagsSetting('Location', 'location'));
+        settingsContainer.appendChild(renderTagsSetting('Setup', 'setup'));
+        settingsContainer.appendChild(renderTagsSetting('Direction', 'direction'));
+        settingsContainer.appendChild(renderTagsSetting('Evidence', 'evidence', 'evidence'));
+        settingsContainer.appendChild(renderTagsSetting('Invalidation', 'invalidation', 'invalidation'));
+        settingsContainer.appendChild(renderTagsSetting('Target', 'target', 'target'));
         
-        settingsContainer.appendChild(renderSimpleSetting('Psychology', appData.settings.psychology, onSettingsChange, 'psychology'));
+        settingsContainer.appendChild(renderTagsSetting('Psychology', 'psychology', 'psychology'));
 
                 
 
