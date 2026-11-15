@@ -389,6 +389,8 @@ async function loadDataFromFile() {
 
         // Promo toast for auto-screenshots (only after the folder is connected,
         // so never while the installation guide / welcome screen is visible)
+        // A new release first (card in the corner, releases.js), then the screenshot tip (waits while the card is there)
+        if (typeof releaseAnnounceMaybe === 'function') releaseAnnounceMaybe();
         if (typeof maybeShowScreenshotPromo === 'function') maybeShowScreenshotPromo();
     } catch (err) {
         console.error("Load process failed:", err);

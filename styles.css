@@ -2104,3 +2104,17 @@ html.scalp-on .scalp-day-bar { box-shadow: inset 0 0 0 1px color-mix(in srgb, va
 .tags-old-back { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 100px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .tags-old-back:hover { border-color: var(--border-hover); }
 .tags-old-name:focus-visible, .tags-old-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* What's new: the card in the corner, once per release (releases.js, 2026-11-15) */
+.release-card { position: relative; width: 360px; max-width: calc(100vw - 48px); box-sizing: border-box; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 18px 48px var(--shadow-md); overflow: hidden; opacity: 0; transform: translateX(calc(100% + 48px)); transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease; }
+.release-card.visible { opacity: 1; transform: translateX(0); }
+.release-card-hero { position: relative; height: 112px; box-sizing: border-box; padding: 16px 20px 0; display: flex; align-items: flex-end; overflow: hidden; border-bottom: 1px solid var(--border-color); background: radial-gradient(120% 90% at 50% 0%, #1c3a8f 0%, #0b1430 45%, #06080d 100%); }
+.release-card-hero img { width: 100%; height: 96px; object-fit: cover; object-position: top; display: block; border-radius: 8px 8px 0 0; border: 1px solid rgba(255,255,255,.12); border-bottom: 0; box-shadow: 0 -6px 30px rgba(56,106,245,.3); }
+.release-card-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 60%, rgba(5,7,11,.7)); pointer-events: none; }
+.release-card-close { position: absolute; z-index: 2; top: 10px; right: 10px; width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; background: rgba(10,12,16,.6); border: 1px solid rgba(255,255,255,.14); font-size: 18px; line-height: 1; cursor: pointer; }
+.release-card-close:focus-visible, .release-card-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.release-card-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+.release-card-title { font-size: 15px; font-weight: 600; color: var(--text-main); }
+.release-card-text { font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+.release-card-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .release-card { transition: none; } }

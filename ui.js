@@ -1204,6 +1204,7 @@ function showScreenshotPromo() {
     if (document.getElementById('screenshot-promo-toast')) return;
     if (activeMediaStream && activeMediaStream.active) return;
     if (screenshotPromoBlocked()) return; // shown again next time the journal opens
+    if (typeof releaseAnnounceBusy === 'function' && releaseAnnounceBusy()) return; // a new release card is there: the tip waits for the next time
 
     const toast = document.createElement('div');
     toast.id = 'screenshot-promo-toast';

@@ -171,12 +171,124 @@ function releaseBellSync() {
     btn.title = "What's new";
 }
 
+// ---------- The card in the corner (2026-11-15) ----------
+// Once per release (or improvement): after the journal opens, a card with its picture slides in at the
+// bottom right. “See what's new” opens the popup (= seen); “Later” or × hide it and the bell keeps its dot.
+// settings.releasesAnnounced = ids already shown this way. Never over Add Trade, Quick trade or a popup:
+// then it waits for the next time the journal opens. The screenshot tip waits while the card is there.
+// ?whatsnew=preview shows the card of the newest release once, also when it was seen (nothing is saved).
+const RELEASE_CARD_DELAY = 1000; // ms after the journal has loaded (the screenshot tip comes at 1200)
+let releaseCardPreview = false;
+let releaseCardPending = false;
+(() => {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        if ((params.get('whatsnew') || '').toLowerCase() === 'preview') {
+            releaseCardPreview = true;
+            params.delete('whatsnew');
+            const rest = params.toString();
+            history.replaceState(null, '', window.location.pathname + (rest ? `?${rest}` : '') + window.location.hash);
+        }
+    } catch (e) { /* no preview */ }
+})();
+
+function releasesAnnounced() {
+    const s = typeof appData !== 'undefined' && appData.settings;
+    return (s && Array.isArray(s.releasesAnnounced)) ? s.releasesAnnounced : [];
+}
+function releaseCardNext() {
+    if (releaseCardPreview) return releasesOn()[0] || null;
+    const done = releasesAnnounced();
+    return releasesUnseen().find(r => !done.includes(r.id)) || null;
+}
+function releaseCardBlocked() {
+    const modal = document.getElementById('trade-modal');
+    return (modal && modal.classList.contains('active')) || !!document.getElementById('app-dialog')
+        || !!document.getElementById('release-menu') || (typeof isGateOpen === 'function' && isGateOpen())
+        || (typeof dirHandle !== 'undefined' && (!dirHandle || !fileConnected));
+}
+// Called after the journal has loaded (storage.js), before the screenshot tip
+function releaseAnnounceMaybe() {
+    if (!releasesReady || releaseCardPending || document.getElementById('release-card')) return;
+    if (!releaseCardNext()) return;
+    releaseCardPending = true;
+    setTimeout(() => { releaseCardPending = false; releaseCardShow(); }, RELEASE_CARD_DELAY);
+}
+// The screenshot tip asks this: true = the card is there (or about to come), the tip waits
+function releaseAnnounceBusy() { return releaseCardPending || !!document.getElementById('release-card'); }
+
+function releaseMarkAnnounced(id) {
+    if (releaseCardPreview) return;
+    const s = appData.settings;
+    if (!Array.isArray(s.releasesAnnounced)) s.releasesAnnounced = [];
+    if (!s.releasesAnnounced.includes(id)) s.releasesAnnounced.push(id);
+    if (typeof autoSave === 'function') autoSave();
+}
+
+function releaseCardShow() {
+    const r = releaseCardNext();
+    if (!r || document.getElementById('release-card') || releaseCardBlocked()) return;
+    const card = document.createElement('div');
+    card.id = 'release-card';
+    card.className = 'release-card';
+    card.setAttribute('role', 'region');
+    card.setAttribute('aria-label', `What's new: ${r.title}`);
+    const kicker = r.kind === 'improvement' ? (r.date ? `Improved · ${r.date}` : 'Improved') : (r.date ? `New · ${r.date}` : 'New release');
+    card.innerHTML = `
+        <button type="button" class="release-card-close" aria-label="Close" title="Close">&times;</button>
+        <div class="release-card-hero">${r.image ? `<img src="${releaseText(r.image)}" alt="">` : ''}</div>
+        <div class="release-card-body">
+            <span class="release-kicker"><span class="release-kicker-dot"></span>${releaseText(kicker)}</span>
+            <strong class="release-card-title">${releaseText(r.title)}</strong>
+            <span class="release-card-text">${releaseText(r.summary)}</span>
+            <div class="release-card-actions">
+                <button type="button" class="btn-secondary btn-sm" data-card="later">Later</button>
+                <button type="button" class="btn-primary btn-sm" data-card="open">See what’s new</button>
+            </div>
+        </div>`;
+    const later = () => { releaseMarkAnnounced(r.id); releaseCardHide(); };
+    card.querySelector('.release-card-close').addEventListener('click', later);
+    card.querySelector('[data-card="later"]').addEventListener('click', later);
+    card.querySelector('[data-card="open"]').addEventListener('click', () => {
+        releaseMarkAnnounced(r.id);
+        releaseCardHide();
+        if (!releaseCardPreview) {
+            const s = appData.settings;
+            if (!releasesSeen().includes(r.id)) {
+                s.releasesSeen = [...releasesSeen(), r.id];
+                releaseBellSync();
+                if (typeof autoSave === 'function') autoSave();
+            }
+        }
+        openReleaseDialog(r.id);
+    });
+    getToastContainer().appendChild(card);
+    // Add Trade, Quick trade or a popup opens: the card slides away (it comes back next time, not marked)
+    const watch = new MutationObserver(() => { if (releaseCardBlocked()) releaseCardHide(); });
+    const modal = document.getElementById('trade-modal');
+    if (modal) watch.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    watch.observe(document.body, { childList: true });
+    card._watch = watch;
+    releaseCardPreview = false; // a preview shows once
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add('visible')));
+}
+
+function releaseCardHide() {
+    const card = document.getElementById('release-card');
+    if (!card || card.classList.contains('hiding')) return;
+    card.classList.add('hiding');
+    card.classList.remove('visible');
+    if (card._watch) card._watch.disconnect();
+    setTimeout(() => card.remove(), 450);
+}
+
 // ---------- The list ----------
 
 function releaseText(t) { return typeof escapeHTML === 'function' ? escapeHTML(t) : String(t); }
 
 function openReleaseMenu(fromKeyboard) {
     if (document.getElementById('release-menu')) { closeReleaseMenu(); return; }
+    releaseCardHide(); // the list marks the new releases as seen
     const list = releasesOn();
     if (!list.length) return;
     const fresh = releasesUnseen().map(r => r.id);
