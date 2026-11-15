@@ -390,6 +390,7 @@ async function loadDataFromFile() {
         // Promo toast for auto-screenshots (only after the folder is connected,
         // so never while the installation guide / welcome screen is visible)
         // A new release first (card in the corner, releases.js), then the screenshot tip (waits while the card is there)
+        if (typeof updateRestoreView === 'function') updateRestoreView(); // after an automatic update: back on the same page
         if (typeof releaseAnnounceMaybe === 'function') releaseAnnounceMaybe();
         if (typeof maybeShowScreenshotPromo === 'function') maybeShowScreenshotPromo();
     } catch (err) {
@@ -553,7 +554,8 @@ async function journalLockAcquire() {
     if (!got && !journalLockHeld) {
         journalReadOnly = true;
         journalStatusSync();
-        setTimeout(journalOpenElsewhere, 0);
+        // After an automatic update the window was read only already: keep it quiet (the top bar still says Read only)
+        if (!(typeof updateAfterReload !== 'undefined' && updateAfterReload)) setTimeout(journalOpenElsewhere, 0);
     }
 }
 
