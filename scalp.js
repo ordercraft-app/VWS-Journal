@@ -281,13 +281,13 @@ function scalpCaptureState() {
 }
 function scalpQuickShotHtml() {
     const q = scalpQ, c = scalpCaptureState();
-    // Several screenshots per trade (shots.js): C adds one more, Remove takes the latest away
+    // Several screenshots per trade (shots.js): C adds one more. Every thumbnail: click = enlarge, × = remove that one.
     const n = q.shots.length;
     if (n) {
-        const shown = q.shots.slice(-3);
-        const thumbs = shown.map((s, i) => `<img class="scalp-q-shot-img" src="${s.url}" alt="Screenshot ${n - shown.length + i + 1} for trade ${q.number}">`).join('');
+        const zoom = typeof SHOTS_I !== 'undefined' ? SHOTS_I.expand : '';
+        const thumbs = q.shots.map((s, i) => `<span class="scalp-q-thumb"><button type="button" class="scalp-q-thumb-img" data-scalp-shot-view="${i}" aria-label="Enlarge screenshot ${i + 1}" title="Enlarge"><img class="scalp-q-shot-img" src="${s.url}" alt=""><span class="scalp-q-thumb-zoom" aria-hidden="true">${zoom}</span></button><button type="button" class="scalp-q-thumb-x" data-scalp-shot-remove="${i}" aria-label="Remove screenshot ${i + 1}" title="Remove">&times;</button></span>`).join('');
         const full = n >= (typeof SHOTS_MAX !== 'undefined' ? SHOTS_MAX : 10);
-        return `<div class="scalp-q-shot has-shot"><span class="scalp-q-thumbs">${thumbs}${n > 3 ? `<span class="scalp-q-more">+${n - 3}</span>` : ''}</span><span><strong>${n === 1 ? 'Screenshot added' : `${n} screenshots`}</strong></span>${c.supported && !full ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Add another ${scalpKbd('C')}</button>` : ''}<button type="button" class="scalp-q-link" data-scalp-shot-remove>${n > 1 ? 'Remove last' : 'Remove'}</button></div>`;
+        return `<div class="scalp-q-shot has-shot"><span class="scalp-q-thumbs${n > 3 ? ' is-many' : ''}" role="group" aria-label="Screenshots">${thumbs}</span><span><strong>${n === 1 ? 'Screenshot added' : `${n} screenshots`}</strong></span>${c.supported && !full ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Add another ${scalpKbd('C')}</button>` : ''}</div>`;
     }
     const btn = c.connected ? `<button type="button" class="btn-primary btn-sm scalp-q-capture" data-scalp-capture>Auto-Capture ${scalpKbd('C', true)}</button>`
         : c.supported ? `<button type="button" class="btn-secondary btn-sm scalp-q-capture" data-scalp-capture>Connect window ${scalpKbd('C')}</button>` : '';
@@ -362,7 +362,8 @@ function scalpQuickOpen() {
         if (b.dataset.scalpRules) { q.rules = q.rules === b.dataset.scalpRules ? null : b.dataset.scalpRules; if (q.rules !== 'broken') q.broken.clear(); return scalpQuickRender(); }
         if (b.dataset.scalpBroke) { q.broken.has(b.dataset.scalpBroke) ? q.broken.delete(b.dataset.scalpBroke) : q.broken.add(b.dataset.scalpBroke); return scalpQuickRender(); }
         if (b.dataset.scalpCapture !== undefined) return scalpQuickCapture();
-        if (b.dataset.scalpShotRemove !== undefined) { const s = q.shots.pop(); if (s) URL.revokeObjectURL(s.url); return scalpQuickRender(); }
+        if (b.dataset.scalpShotRemove !== undefined) return scalpQuickRemoveShot(Number(b.dataset.scalpShotRemove));
+        if (b.dataset.scalpShotView !== undefined) return scalpQuickViewShot(Number(b.dataset.scalpShotView));
         if (b.dataset.scalpSave) return scalpQuickSave(b.dataset.scalpSave === 'close', close);
         if (b.dataset.scalpFull !== undefined) return scalpQuickFull(close);
     });
@@ -406,6 +407,26 @@ function scalpQuickOpen() {
     });
     release = appDialogTrap(box, { onEscape: close, initialFocus: box });
     scalpQuickRender();
+}
+// Quick trade screenshots: enlarge one (the viewer opens over the popup, ← → for the others), remove one
+function scalpQuickViewShot(i) {
+    if (!scalpQ || !scalpQ.shots[i]) return;
+    const urls = scalpQ.shots.map(s => s.url);
+    const label = [scalpQ.number ? `Trade ${scalpQ.number}` : '', scalpQ.symbol].filter(Boolean).join(' · ');
+    if (typeof shotsViewer === 'function') shotsViewer(urls, i, label, false);
+    else openImageViewer(urls[i]);
+    imageViewerModal.classList.add('is-over-dialog'); // shots.js removes it when the viewer closes
+}
+function scalpQuickRemoveShot(i) {
+    if (!scalpQ || !scalpQ.shots[i]) return;
+    const [s] = scalpQ.shots.splice(i, 1);
+    if (s) URL.revokeObjectURL(s.url);
+    scalpQuickRender();
+    // Focus stays in the row: the × of the next one (or the one before), else Add another, else the popup
+    const box = document.getElementById('scalp-q-dialog'); if (!box) return;
+    const xs = box.querySelectorAll('[data-scalp-shot-remove]');
+    const next = xs[Math.min(i, xs.length - 1)] || box.querySelector('.scalp-q-shot [data-scalp-capture]') || box;
+    try { next.focus({ preventScroll: true }); } catch (e) {}
 }
 async function scalpQuickSetShot(fileOrBlob) {
     if (!scalpQ || !fileOrBlob) return;

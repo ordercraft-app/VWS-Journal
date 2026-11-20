@@ -52,8 +52,8 @@
         "creator": { "@type": "Organization", "name": "Order Craft", "url": "https://marketplace.elgato.com/@ordercraft" }
     }
     </script>
-    <link rel="stylesheet" href="styles.css?v=2026-11-15e">
-    <link rel="stylesheet" href="landing.css?v=2026-11-15e">
+    <link rel="stylesheet" href="styles.css?v=2026-11-20a">
+    <link rel="stylesheet" href="landing.css?v=2026-11-20a">
     <script>
         // Returning users: hide the welcome page before the first paint (gate.js decides for real)
         // ?landing=on / ?landing=off: always show the welcome page in this browser, also with a journal (for checking the page)
@@ -383,6 +383,10 @@
                 </button>
                 <button class="btn-icon" id="btn-nav-help" title="Help & FAQ">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </button>
+                <!-- Stream Deck page: only with FEATURES.streamdeck on (streamdeck.js removes it otherwise) -->
+                <button class="btn-icon" id="btn-nav-streamdeck" title="Stream Deck" aria-label="Stream Deck">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><g fill="currentColor" stroke="none"><rect x="5" y="7.9" width="2.8" height="2.8" rx=".6"/><rect x="10.6" y="7.9" width="2.8" height="2.8" rx=".6"/><rect x="16.2" y="7.9" width="2.8" height="2.8" rx=".6"/><rect x="5" y="13.3" width="2.8" height="2.8" rx=".6"/><rect x="10.6" y="13.3" width="2.8" height="2.8" rx=".6"/><rect x="16.2" y="13.3" width="2.8" height="2.8" rx=".6"/></g></svg>
                 </button>
                 <div style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 12px;">
                     <button class="btn-icon" id="btn-keys" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
@@ -956,6 +960,9 @@
                     </div>
                     </div>
                 </section>
+
+                <!-- Stream Deck View (streamdeck.js fills it) -->
+                <section id="view-streamdeck" class="view" aria-label="Stream Deck"></section>
             </main>
         </div>
     </div>
@@ -1081,26 +1088,27 @@
     </div>
 
     <!-- ?v=: raised with every update, so browsers load the new files instead of a cached mix -->
-    <script defer src="globals.js?v=2026-11-15e"></script>
-    <script defer src="storage.js?v=2026-11-15e"></script>
-    <script defer src="ui.js?v=2026-11-15e"></script>
-    <script defer src="tags.js?v=2026-11-15e"></script>
-    <script defer src="ui-settings.js?v=2026-11-15e"></script>
-    <script defer src="tradeform.js?v=2026-11-15e"></script>
-    <script defer src="share.js?v=2026-11-15e"></script>
-    <script defer src="customcharts.js?v=2026-11-15e"></script>
-    <script defer src="gate.js?v=2026-11-15e"></script>
-    <script defer src="charts.js?v=2026-11-15e"></script>
-    <script defer src="rules.js?v=2026-11-15e"></script>
-    <script defer src="rules-settings.js?v=2026-11-15e"></script>
-    <script defer src="rules-stats.js?v=2026-11-15e"></script>
-    <script defer src="system.js?v=2026-11-15e"></script>
-    <script defer src="backup.js?v=2026-11-15e"></script>
-    <script defer src="scalp.js?v=2026-11-15e"></script>
-    <script defer src="shots.js?v=2026-11-15e"></script>
-    <script defer src="releases.js?v=2026-11-15e"></script>
-    <script defer src="update.js?v=2026-11-15e"></script>
-    <script defer src="app.js?v=2026-11-15e"></script>
+    <script defer src="globals.js?v=2026-11-20a"></script>
+    <script defer src="storage.js?v=2026-11-20a"></script>
+    <script defer src="ui.js?v=2026-11-20a"></script>
+    <script defer src="tags.js?v=2026-11-20a"></script>
+    <script defer src="ui-settings.js?v=2026-11-20a"></script>
+    <script defer src="tradeform.js?v=2026-11-20a"></script>
+    <script defer src="share.js?v=2026-11-20a"></script>
+    <script defer src="customcharts.js?v=2026-11-20a"></script>
+    <script defer src="gate.js?v=2026-11-20a"></script>
+    <script defer src="charts.js?v=2026-11-20a"></script>
+    <script defer src="rules.js?v=2026-11-20a"></script>
+    <script defer src="rules-settings.js?v=2026-11-20a"></script>
+    <script defer src="rules-stats.js?v=2026-11-20a"></script>
+    <script defer src="system.js?v=2026-11-20a"></script>
+    <script defer src="backup.js?v=2026-11-20a"></script>
+    <script defer src="scalp.js?v=2026-11-20a"></script>
+    <script defer src="shots.js?v=2026-11-20a"></script>
+    <script defer src="streamdeck.js?v=2026-11-20a"></script>
+    <script defer src="releases.js?v=2026-11-20a"></script>
+    <script defer src="update.js?v=2026-11-20a"></script>
+    <script defer src="app.js?v=2026-11-20a"></script>
     <!-- Cloudflare Web Analytics: anonymous visit counts, no cookies -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "baddce6ef01f4359ab4f8c4395db3e00"}'></script>
     <!-- End Cloudflare Web Analytics -->

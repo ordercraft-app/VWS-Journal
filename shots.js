@@ -175,7 +175,7 @@ function shotsViewerReset() {
     const bar = document.getElementById('shots-viewer');
     if (bar) bar.remove();
     shotsView.urls = []; shotsView.fromForm = false;
-    imageViewerModal.classList.remove('shots-viewing');
+    imageViewerModal.classList.remove('shots-viewing', 'is-over-dialog');
 }
 function shotsViewer(urls, at, label, fromForm) {
     urls = urls.filter(Boolean);

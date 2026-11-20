@@ -110,6 +110,8 @@ The journal is a static web app: plain HTML, CSS and JavaScript, hosted on GitHu
 | `backup.js` | Automatic daily backups, restore, and protection against a damaged journal file |
 | `scalp.js` | Scalping mode (Quick trade, Complete trade), the day bar and the max losses per day |
 | `shots.js` | Multiple screenshots per trade: the latest next to the form, the thumbnails in the form, the carousel viewer (released with scalping mode) |
+| `streamdeck.js` | The Stream Deck page: combine the VWS Journal icon pack with Tradovate keys (switch `FEATURES.streamdeck`) |
+| `streamdeck/` | Downloads for that page: the two Stream Deck profiles, the Tampermonkey size script and the key images |
 | `releases.js` | What's new (the bell, top right) |
 | `app.js` | Start-up, navigation and keyboard shortcuts |
 | `settings.json` | Default settings |

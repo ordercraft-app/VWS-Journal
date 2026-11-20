@@ -10,6 +10,28 @@
 // A release with a video shows it embedded in its popup (YouTube privacy-enhanced mode); it loads only when that popup opens.
 const RELEASES = [
     {
+        id: 'stream-deck',
+        on: () => typeof sdFeatureOn !== 'undefined' && sdFeatureOn,
+        date: FEATURES.streamdeck ? FEATURES.streamdeck.date : '',
+        youtube: FEATURES.streamdeck ? FEATURES.streamdeck.youtube : '',
+        icon: 'deck',
+        title: 'Stream Deck icon pack',
+        summary: 'Log your Quick trades from your Stream Deck. Now on the Elgato Marketplace.',
+        image: 'releases/stream-deck.webp',
+        intro: 'Log a Quick trade without the keyboard. Every key matches a VWS Journal shortcut, in the colours of the app.',
+        points: [
+            ['zap', 'A key for every step', 'New trade, direction, capture, setup, result and Save & next.'],
+            ['camera', 'Static or animated', 'Every key as a PNG, most also as a 2-second animation. With or without labels.'],
+            ['list', 'Your own setup names', 'Blank setup keys with a small number: type the name on the key.'],
+            ['link', 'Boost it with Tradovate', 'Combine your Tradovate trade actions with your journal: one key places the order and adds the chart.', 'boost']
+        ],
+        cta: 'Get the icon pack',
+        external: true, // the main button opens the Elgato Marketplace in a new tab
+        go: () => window.open(typeof SD_MARKETPLACE !== 'undefined' ? SD_MARKETPLACE : 'https://marketplace.elgato.com/@ordercraft', '_blank', 'noopener'),
+        cta2: 'See how to boost it', // optional second button
+        go2: () => { if (typeof sdOpen === 'function') sdOpen('setup'); }
+    },
+    {
         id: 'tags-in-the-trade',
         kind: 'improvement', // shows “Improved” instead of “New”, no video
         on: () => !!(FEATURES.tags && FEATURES.tags.on),
@@ -112,6 +134,8 @@ const RELEASES = [
 ];
 
 const RELEASE_ICONS = {
+    deck: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><g fill="currentColor" stroke="none"><rect x="5" y="7.9" width="2.8" height="2.8" rx=".6"/><rect x="10.6" y="7.9" width="2.8" height="2.8" rx=".6"/><rect x="16.2" y="7.9" width="2.8" height="2.8" rx=".6"/><rect x="5" y="13.3" width="2.8" height="2.8" rx=".6"/><rect x="10.6" y="13.3" width="2.8" height="2.8" rx=".6"/><rect x="16.2" y="13.3" width="2.8" height="2.8" rx=".6"/></g></svg>',
+    ext: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
     tag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
     search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
     pen: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
@@ -389,12 +413,13 @@ function openReleaseDialog(id) {
                 <p>${releaseText(r.intro)}</p>
             </div>
             <div class="release-points">
-                ${r.points.map(([ic, t, d]) => `<div class="release-point"><span class="release-point-icon">${RELEASE_ICONS[ic] || ''}</span><div class="release-point-text"><strong>${releaseText(t)}</strong><span>${releaseText(d)}</span></div></div>`).join('')}
+                ${r.points.map(([ic, t, d, mark]) => `<div class="release-point${mark === 'boost' ? ' is-boost' : ''}"><span class="release-point-icon">${RELEASE_ICONS[ic] || ''}</span><div class="release-point-text"><strong>${releaseText(t)}</strong><span>${releaseText(d)}</span></div></div>`).join('')}
             </div>
             ${showCode ? `<div class="release-note"><span class="release-note-icon">${RELEASE_ICONS.key}</span><span>The default rules for the setups unlock with a <strong>VWS code</strong>, shared in the Discord of the Drysdale Trading Group. The rules for all setups and your own rules always work.</span><button type="button" class="release-note-link" data-dialog="code">Where do I find a code?</button></div>` : ''}
             <div class="app-dialog-actions">
                 <button type="button" class="btn-secondary" data-dialog="cancel">Close</button>
-                <button type="button" class="btn-primary" data-dialog="ok">${releaseText(r.cta)}</button>
+                ${r.cta2 ? `<button type="button" class="btn-secondary" data-dialog="ok2">${releaseText(r.cta2)}</button>` : ''}
+                <button type="button" class="btn-primary${r.external ? ' is-external' : ''}" data-dialog="ok">${releaseText(r.cta)}${r.external ? ` ${RELEASE_ICONS.ext}<span class="sd-sr"> (opens in a new tab)</span>` : ''}</button>
             </div>
         </div>`;
 
@@ -406,6 +431,8 @@ function openReleaseDialog(id) {
     overlay.addEventListener('mousedown', e => { if (e.target === overlay) close(); });
     overlay.querySelectorAll('[data-dialog="cancel"]').forEach(b => b.addEventListener('click', close));
     overlay.querySelector('[data-dialog="ok"]').addEventListener('click', () => { close(); r.go(); });
+    const ok2 = overlay.querySelector('[data-dialog="ok2"]');
+    if (ok2) ok2.addEventListener('click', () => { close(); r.go2(); });
     const code = overlay.querySelector('[data-dialog="code"]');
     if (code) code.addEventListener('click', () => { close(); rulesOpenCodeInfoDialog(); });
 

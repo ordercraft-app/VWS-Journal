@@ -9,7 +9,8 @@ const FEATURES = {
     grade: { on: true },                           // Grade C to A+ (already live, part of Rules & grades)
     backup: { on: false, date: '', youtube: '' },  // Automatic backups (backup.js)
     scalp: { on: true, date: 'November 2026', youtube: 'u2_p9fE5zF8' },   // Scalping mode, day bar, max losses, multiple screenshots (scalp.js, shots.js)
-    tags: { on: true, date: 'November 2026' }  // Improvement: add / rename / remove tags from Add Trade (tags.js); What's new shows it as “Improved”
+    tags: { on: true, date: 'November 2026' },  // Improvement: add / rename / remove tags from Add Trade (tags.js); What's new shows it as “Improved”
+    streamdeck: { on: false, date: 'November 2026', youtube: '' }  // Stream Deck icon pack release + Stream Deck page (streamdeck.js); youtube = id of the icon-pack video
 };
 
 // --- App State ---
