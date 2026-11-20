@@ -319,7 +319,11 @@ function scalpQuickRender() {
     const miss = scalpQuickMissing();
     box.querySelectorAll('[data-scalp-save]').forEach(b => { b.disabled = miss.length > 0; });
     box.querySelector('.scalp-q-hint').textContent = miss.length ? `Still needed: ${miss.join(', ')}` : 'Ready · Enter saves, then the next trade';
-    if (!box.contains(document.activeElement)) box.focus({ preventScroll: true }); // a re-render must not drop the keys
+    // A re-render must not drop the keys. Also when the focused button just got disabled: after Save & next
+    // clicked with the mouse, the browser would move the focus to the page and C, 1–9, W / L / B, Enter
+    // (and the Stream Deck keys that send them) would no longer reach the Quick trade (2026-11-20).
+    const fx = document.activeElement;
+    if (!box.contains(fx) || fx.disabled) box.focus({ preventScroll: true });
 }
 // 1-9 by key position (Digit / Numpad), so AZERTY keyboards work too (they give & é " … without Shift)
 function scalpDigitKey(e) {
