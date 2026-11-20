@@ -125,7 +125,20 @@ function shotsLabel() {
     return [num ? `Trade ${num}` : (shotsSt.tradeId ? 'Trade' : 'New trade'), sym].filter(Boolean).join(' · ');
 }
 function shotsKbd(k) { return `<kbd class="keys-kbd is-inline">${k}</kbd>`; }
-function shotsRender() { if (!shotsSt.open) return; shotsStage(); shotsStrip(); }
+function shotsRender() {
+    if (!shotsSt.open) return;
+    // A click on a thumbnail or arrow re-draws it: keep the focus on the same kind of button, so ← → keep working
+    const a = document.activeElement;
+    const inStage = a && a.closest && a.closest('#shots-stage'), inStrip = a && a.closest && a.closest('#shots-strip');
+    const was = (inStage || inStrip) ? { go: a.dataset.shotsGo, pick: a.dataset.shotsPick !== undefined, where: inStage ? '#shots-stage' : '#shots-strip' } : null;
+    shotsStage(); shotsStrip();
+    if (was && !document.activeElement.closest('#shots-stage, #shots-strip')) {
+        const root = document.querySelector(was.where); if (!root) return;
+        const next = (was.go && root.querySelector(`[data-shots-go="${was.go}"]:not([disabled])`))
+            || root.querySelector(`[data-shots-pick="${shotsSt.at}"]`) || root.querySelector('[data-shots-enlarge], [data-shots-add]');
+        try { if (next) next.focus({ preventScroll: true }); } catch (e) {}
+    }
+}
 
 function shotsStage() {
     let st = document.getElementById('shots-stage');
@@ -190,6 +203,9 @@ function shotsViewer(urls, at, label, fromForm) {
 function shotsViewerRender() {
     const { urls, at, label } = shotsView, n = urls.length;
     let bar = document.getElementById('shots-viewer');
+    // A click on a thumbnail or arrow re-draws the bar: remember what had the focus, so ← → keep working
+    const had = bar && bar.contains(document.activeElement) ? document.activeElement : null;
+    const hadGo = had && had.dataset.shotsVgo, hadPick = had && had.dataset.shotsVpick !== undefined;
     if (!bar) { bar = document.createElement('div'); bar.id = 'shots-viewer'; imageViewerModal.appendChild(bar); }
     enlargedImage.src = urls[at];
     enlargedImage.alt = `Screenshot ${at + 1} of ${n}`;
@@ -198,6 +214,12 @@ function shotsViewerRender() {
         <button type="button" class="shots-varrow is-right" data-shots-vgo="1" aria-label="Next screenshot" ${at === n - 1 ? 'disabled' : ''}>${SHOTS_I.right}</button>
         <div class="shots-vfoot"><span class="shots-vcap">${label ? `${escapeHTML(label)} · ` : ''}${at + 1} / ${n}</span>
             <div class="shots-vthumbs" role="group" aria-label="Screenshots">${urls.map((u, i) => `<button type="button" class="shots-thumb${i === at ? ' is-on' : ''}" data-shots-vpick="${i}" aria-label="Screenshot ${i + 1}" aria-pressed="${i === at}"><img src="${u}" alt=""></button>`).join('')}</div></div>`;
+    if (had) {
+        let next = null;
+        if (hadPick) next = bar.querySelector(`[data-shots-vpick="${at}"]`);
+        else if (hadGo) next = bar.querySelector(`[data-shots-vgo="${hadGo}"]:not([disabled])`) || bar.querySelector(`[data-shots-vpick="${at}"]`);
+        try { (next || imageViewerClose).focus({ preventScroll: true }); } catch (e) {}
+    }
 }
 function shotsViewerGo(i) {
     const n = shotsView.urls.length; if (n < 2) return;
@@ -279,6 +301,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('[data-shots-add]')) { tImageInput.click(); return; }
         if (e.target.closest('[data-shots-enlarge]')) shotsEnlargeFromForm();
     });
+    // A thumbnail or arrow of the stage or strip has the focus: ← → (no Alt needed) go through the screenshots
+    tradeModal.addEventListener('keydown', e => {
+        if (!shotsSt.open || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return; // Alt ← → is handled in app.js
+        const t = e.target;
+        if (!t.closest || !(t.closest('#shots-stage') || t.closest('#shots-strip [data-shots-pick]'))) return;
+        if (shotsSt.items.length < 2) return;
+        e.preventDefault(); e.stopPropagation();
+        shotsGo(e.key === 'ArrowLeft' ? -1 : 1);
+    });
     // The stage sits on the backdrop: a click next to the chart closes the form, as the backdrop did
     tradeModal.addEventListener('mousedown', e => { if (e.target.id === 'shots-stage') closeModal(); });
     // Drop images anywhere on the stage
@@ -301,10 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const g = e.target.closest('[data-shots-vgo]'); if (g) { shotsViewerGo(shotsView.at + Number(g.dataset.shotsVgo)); return; }
         const p = e.target.closest('[data-shots-vpick]'); if (p) { shotsViewerGo(Number(p.dataset.shotsVpick)); return; }
     });
-    imageViewerModal.addEventListener('keydown', e => {
-        // ← → and Alt ← → (same key as next to the form)
-        if (shotsView.urls.length < 2 || e.ctrlKey || e.metaKey || e.shiftKey) return;
-        if (e.key === 'ArrowLeft') { e.preventDefault(); shotsViewerGo(shotsView.at - 1); }
-        else if (e.key === 'ArrowRight') { e.preventDefault(); shotsViewerGo(shotsView.at + 1); }
-    });
+    // ← → and Alt ← → (same key as next to the form), wherever the focus is while the viewer is open,
+    // and never through to the page behind it (the dashboard would change day)
+    document.addEventListener('keydown', e => {
+        if (!imageViewerModal.classList.contains('active')) return;
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        e.preventDefault(); e.stopPropagation();
+        if (shotsView.urls.length < 2) return;
+        shotsViewerGo(shotsView.at + (e.key === 'ArrowLeft' ? -1 : 1));
+    }, true);
 });

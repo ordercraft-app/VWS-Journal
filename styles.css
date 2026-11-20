@@ -490,6 +490,10 @@ select.linear-input {
 #enlarged-image { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 24px 48px var(--shadow-md); cursor: zoom-out; }
 .viewer-close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 36px; opacity: 0.7; }
 .viewer-close-btn:hover { opacity: 1; }
+/* The × of the screenshot viewer: just the ×, no box or ring around it (a shadow keeps it readable on light screenshots); keyboard focus = full white */
+#image-viewer-close { background: none; border: 0; border-radius: 0; padding: 4px 8px; line-height: 1; outline: none; box-shadow: none; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+#image-viewer-close:focus { outline: none; }
+#image-viewer-close:focus-visible { opacity: 1; }
 
 /* Settings UI Layout */
 .info-banner { background-color: rgba(94, 106, 210, 0.05); border: 1px solid rgba(94, 106, 210, 0.2); color: var(--text-main); padding: 12px 16px; border-radius: 16px; margin-bottom: 24px; font-size: 13px; display: flex; align-items: center; gap: 12px; }
