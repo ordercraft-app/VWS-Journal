@@ -32,6 +32,25 @@ const RELEASES = [
         go2: () => { if (typeof sdOpen === 'function') sdOpen('setup'); }
     },
     {
+        id: 'automatic-backups',
+        on: () => typeof backupFeatureOn !== 'undefined' && backupFeatureOn,
+        date: FEATURES.backup ? FEATURES.backup.date : '',
+        youtube: FEATURES.backup ? FEATURES.backup.youtube : '',
+        icon: 'shield',
+        title: 'Automatic backups',
+        summary: 'Your journal is copied every day. Restore it in one click.',
+        image: 'releases/automatic-backups.webp',
+        intro: 'Your trades are your most valuable data. From now on the journal makes a copy every day, and a damaged file can never cost you your trades again.',
+        points: [
+            ['check', 'A copy every day', 'The first time you open your journal each day, in the backups folder.'],
+            ['plus', 'Restore in one click', 'Settings › Backups: choose a day and you are back.'],
+            ['eye', 'A damaged file is caught', 'Never overwritten: the app offers your latest backup.'],
+            ['link', 'Undo a restore too', 'Before a restore, your journal is saved as a backup first.']
+        ],
+        cta: 'Open Backups',
+        go: () => { if (typeof btnNavSettings !== 'undefined' && btnNavSettings) btnNavSettings.click(); if (typeof switchSettingsTab === 'function') switchSettingsTab('backups'); }
+    },
+    {
         id: 'tags-in-the-trade',
         kind: 'improvement', // shows “Improved” instead of “New”, no video
         on: () => !!(FEATURES.tags && FEATURES.tags.on),
@@ -69,25 +88,6 @@ const RELEASES = [
         ],
         cta: 'Switch to Scalp',
         go: () => { if (typeof scalpSet === 'function') scalpSet(true, true); }
-    },
-    {
-        id: 'automatic-backups',
-        on: () => typeof backupFeatureOn !== 'undefined' && backupFeatureOn,
-        date: FEATURES.backup ? FEATURES.backup.date : '',
-        youtube: FEATURES.backup ? FEATURES.backup.youtube : '',
-        icon: 'shield',
-        title: 'Automatic backups',
-        summary: 'Your journal is copied every day. Restore it in one click.',
-        image: 'releases/automatic-backups.webp',
-        intro: 'Your trades are your most valuable data. From now on the journal makes a copy every day, and a damaged file can never cost you your trades again.',
-        points: [
-            ['check', 'A copy every day', 'The first time you open your journal each day, in the backups folder.'],
-            ['plus', 'Restore in one click', 'Settings › Backups: choose a day and you are back.'],
-            ['eye', 'A damaged file is caught', 'Never overwritten: the app offers your latest backup.'],
-            ['link', 'Undo a restore too', 'Before a restore, your journal is saved as a backup first.']
-        ],
-        cta: 'Open Backups',
-        go: () => { if (typeof btnNavSettings !== 'undefined' && btnNavSettings) btnNavSettings.click(); if (typeof switchSettingsTab === 'function') switchSettingsTab('backups'); }
     },
     {
         id: 'share-for-review',

@@ -78,9 +78,13 @@ function defaultShareState() {
 async function loadShareState() {
     shareState = defaultShareState();
     if (!dirHandle) return;
+    shareLoadFailed = false;
     try {
-        const handle = await dirHandle.getFileHandle('share.json');
-        const text = await (await handle.getFile()).text();
+        // Busy or no access: never start empty (a save would wipe the share keys); see journalReadFile (storage.js)
+        let found;
+        try { found = await journalReadFile('share.json'); }
+        catch (re) { shareLoadFailed = true; console.error('share.json could not be read:', re); throw re; }
+        const text = found.missing ? '' : found.text;
         const saved = text ? JSON.parse(text) : {};
         if (saved && typeof saved === 'object') {
             shareState.selection = Array.isArray(saved.selection) ? saved.selection.filter(x => typeof x === 'string') : [];
@@ -91,15 +95,17 @@ async function loadShareState() {
             shareState.removedReviewIds = Array.isArray(saved.removedReviewIds) ? saved.removedReviewIds : [];
         }
     } catch (e) {
-        // No share.json yet: start empty
+        // No share.json yet (or not a share file): start empty
     }
     retireExpiredShare();
     updateSharesButton();
     syncReviews(true);
 }
 
+let shareLoadFailed = false; // share.json is there but could not be read: don't write over it
+
 async function saveShareState() {
-    if (!dirHandle || !fileConnected) return;
+    if (!dirHandle || !fileConnected || shareLoadFailed) return;
     try {
         const handle = await dirHandle.getFileHandle('share.json', { create: true });
         const writable = await handle.createWritable();

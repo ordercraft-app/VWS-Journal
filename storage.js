@@ -278,54 +278,96 @@ function migrateSettings() {
     if (typeof releasesMigrate === 'function') releasesMigrate();
 }
 
+// Read one journal file. A sync service (OneDrive, iCloud, Dropbox) or a virus scanner can hold a
+// file for a moment, mostly right after the computer starts: then reading fails. Try again a few
+// times before giving up. → { file, text } | { missing: true }; throws when the file is there but
+// can't be read. Only "not found" counts as missing: any other error must never look like an empty journal.
+const JOURNAL_READ_WAITS = [0, 300, 800, 1600]; // ms to wait before each try
+async function journalReadFile(name, dir = dirHandle) {
+    let lastErr = null;
+    for (const wait of JOURNAL_READ_WAITS) {
+        if (wait) await new Promise(r => setTimeout(r, wait));
+        let handle;
+        try { handle = await dir.getFileHandle(name); }
+        catch (e) {
+            if (e && e.name === 'NotFoundError') return { missing: true };
+            lastErr = e; continue;
+        }
+        try {
+            const file = await handle.getFile();
+            const text = await file.text();
+            return { file, text };
+        } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('unreadable');
+}
+
+// The trades in a journal file's text (an array, or the old { trades, settings } format); null = not a journal
+function journalTradesOf(parsed) {
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.trades)) return parsed.trades;
+    return null;
+}
+
 async function loadDataFromFile() {
     journalStamp = {};
-    let damaged = null; // { file, text } when a journal file can't be read
+    let damaged = null;    // { file, text } when a journal file has text that isn't a journal
+    let unreadable = null; // file name that is there but could not be read (busy or no access)
     if (journalDamaged) { journalDamaged = null; if (journalLockHeld) journalReadOnly = false; }
+    if (journalUnreadable) { journalUnreadable = null; if (journalLockHeld) journalReadOnly = false; }
     try {
         // Load settings first
-        try {
-            const settingsHandle = await dirHandle.getFileHandle('settings.json');
-            const settingsFile = await settingsHandle.getFile();
-            const settingsContents = await settingsFile.text();
-            journalRememberLoaded('settings.json', settingsFile, settingsContents);
-            if(settingsContents) {
-                try { appData.settings = JSON.parse(settingsContents); }
-                catch (pe) { damaged = { file: 'settings.json', text: settingsContents }; appData.settings = { ...getDefaultSettings(), theme: appData.settings.theme }; }
+        let settingsRead = null;
+        try { settingsRead = await journalReadFile('settings.json'); }
+        catch (e) { unreadable = 'settings.json'; console.error('settings.json could not be read:', e); }
+        if (settingsRead && !settingsRead.missing) {
+            const settingsContents = settingsRead.text;
+            journalRememberLoaded('settings.json', settingsRead.file, settingsContents);
+            if (settingsContents.trim()) {
+                let parsed;
+                try { parsed = JSON.parse(settingsContents); } catch (pe) { parsed = undefined; }
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) appData.settings = parsed;
+                else { damaged = { file: 'settings.json', text: settingsContents }; appData.settings = { ...getDefaultSettings(), theme: appData.settings.theme }; }
                 if (!appData.settings.symbol) appData.settings.symbol = ["NQ", "ES", "GC", "CL", "BTC"];
             } else {
                 appData.settings = { ...getDefaultSettings(), theme: appData.settings.theme };
             }
-        } catch(e) {
-            // No settings.json yet (new folder): start with the full default settings
-            console.log("No existing settings.json found, using defaults.");
+        } else {
+            // No settings.json yet (new folder), or it can't be read (nothing is saved then): defaults
+            if (settingsRead) console.log("No existing settings.json found, using defaults.");
             appData.settings = { ...getDefaultSettings(), theme: appData.settings.theme };
         }
 
-        // Load trades
-        try {
-            const tradesHandle = await dirHandle.getFileHandle('vwap-journal.json', { create: true });
-            const tradesFile = await tradesHandle.getFile();
-            const tradesContents = await tradesFile.text();
-            journalRememberLoaded('vwap-journal.json', tradesFile, tradesContents);
-            if(tradesContents) {
+        // Load trades. Always start empty, so a failed read never keeps (and saves) trades of another folder.
+        appData.trades = [];
+        let tradesRead = null;
+        try { tradesRead = await journalReadFile('vwap-journal.json'); }
+        catch (e) { unreadable = unreadable || 'vwap-journal.json'; console.error('vwap-journal.json could not be read:', e); }
+        if (tradesRead && !tradesRead.missing) {
+            const tradesContents = tradesRead.text;
+            journalRememberLoaded('vwap-journal.json', tradesRead.file, tradesContents);
+            if (tradesContents.trim()) {
                 let parsedTrades;
-                try { parsedTrades = JSON.parse(tradesContents); }
-                catch (pe) { damaged = { file: 'vwap-journal.json', text: tradesContents }; parsedTrades = []; }
-                // Handle migration from old format where trades and settings were in one file
-                if (parsedTrades.trades) {
-                   appData.trades = parsedTrades.trades;
-                   // Only migrate settings from old journal if we didn't just load a dedicated settings.json
-                   const vwap = appData.settings.location && appData.settings.location.VWAP;
-                   if(parsedTrades.settings && (!vwap || !(vwap.sub1 || []).length)) {
-                        appData.settings = parsedTrades.settings;
-                   }
-                } else if (Array.isArray(parsedTrades)) {
-                   appData.trades = parsedTrades;
+                try { parsedTrades = JSON.parse(tradesContents); } catch (pe) { parsedTrades = undefined; }
+                const list = journalTradesOf(parsedTrades);
+                if (!list) {
+                    // Not a journal (cut off, or something else): keep it, never write over it
+                    damaged = { file: 'vwap-journal.json', text: tradesContents };
+                } else {
+                    appData.trades = list;
+                    // Handle migration from old format where trades and settings were in one file
+                    if (!Array.isArray(parsedTrades)) {
+                        // Only migrate settings from old journal if we didn't just load a dedicated settings.json
+                        const vwap = appData.settings.location && appData.settings.location.VWAP;
+                        if (parsedTrades.settings && (!vwap || !(vwap.sub1 || []).length)) {
+                            appData.settings = parsedTrades.settings;
+                        }
+                    }
                 }
-                
+
                 // Migrate old trades to arrays and new formats
                 appData.trades = appData.trades.map(trade => {
+                    if (!trade || typeof trade !== 'object') return trade; // dropped by normalizeTrades
                     if (trade.location !== undefined && !trade.locations) {
                         trade.locations = [{primary: trade.location, sub1: trade.locSub1, sub2: trade.locSub2}];
                         delete trade.location; delete trade.locSub1; delete trade.locSub2;
@@ -364,8 +406,6 @@ async function loadDataFromFile() {
                     return trade;
                 });
             }
-        } catch (e) {
-            console.error("Error loading vwap-journal.json:", e);
         }
         
         migrateSettings();
@@ -377,14 +417,23 @@ async function loadDataFromFile() {
         // Only one window saves to a journal (a second window opens read only)
         journalReloading = false;
         await journalLockAcquire();
+        journalStatusSync(); // a pill from before (Not loaded, File damaged) goes once the files read well
 
-        // A file that can't be read is kept and never written over (read only, restore a backup).
+        // A file that can't be read right now: nothing is saved (read only) until it can be read again
+        if (unreadable) {
+            journalHandleUnreadable(unreadable);
+            renderDashboard();
+            return;
+        }
+
+        // A file that isn't a journal is kept and never written over (read only, restore a backup).
         // Otherwise: today's backup of the files as they were loaded (backup.js)
         if (damaged && typeof backupHandleDamaged === 'function') await backupHandleDamaged(damaged.file, damaged.text);
         else if (typeof backupDailyIfNeeded === 'function') await backupDailyIfNeeded();
 
-        // Force save to ensure both files exist in the new format
-        await autoSave();
+        // Save only when needed: a file is missing (new folder) or an update changed something
+        // (migrations, cleaned-up trades). Every save is a chance for a sync service to get in the way.
+        if (JOURNAL_FILES.some(name => !journalStamp[name] || journalStamp[name].text !== journalTextOf(name))) await autoSave();
         renderDashboard();
 
         // Promo toast for auto-screenshots (only after the folder is connected,
@@ -397,6 +446,33 @@ async function loadDataFromFile() {
         console.error("Load process failed:", err);
         journalReloading = false;
     }
+}
+
+// A journal file is there but could not be read: show an empty, read-only journal and ask to try again.
+// Nothing is written, so the file on disk stays exactly as it was.
+function journalHandleUnreadable(file) {
+    journalUnreadable = { file };
+    journalReadOnly = true;
+    journalStatusSync();
+    setTimeout(journalUnreadableDialog, 0);
+}
+
+async function journalUnreadableDialog() {
+    if (!journalUnreadable || typeof appConfirm !== 'function' || document.getElementById('app-dialog')) return;
+    const again = await appConfirm({
+        title: 'Your journal could not be opened',
+        message: `${journalUnreadable.file} could not be read just now. A sync service like OneDrive, iCloud or Dropbox, or a virus scanner, may be using it. Nothing was changed or saved, your trades are safe. Wait a moment and try again.`,
+        confirmText: 'Try again',
+        cancelText: 'Not now',
+        tone: 'primary', icon: 'warn'
+    });
+    if (again) journalRetryLoad();
+}
+
+async function journalRetryLoad() {
+    await loadDataFromFile();
+    if (journalUnreadable) return; // the dialog is shown again
+    if (typeof showToast === 'function') showToast('Your journal is open.', 'success');
 }
 
 // --- AutoSave Logic ---
@@ -414,8 +490,14 @@ let journalReadOnly = false;    // this window may not save (journal open in ano
 let journalReloading = false;   // a newer version from disk is being loaded
 let journalStamp = {};          // file name → { t: lastModified, text } as last loaded or written
 let journalDamaged = null;      // { file, keptAs } when a journal file could not be read (backup.js)
+let journalUnreadable = null;   // { file } when a journal file is there but busy / no access (nothing is saved)
 
 const JOURNAL_FILES = ['vwap-journal.json', 'settings.json'];
+
+// What a save writes to each journal file
+function journalTextOf(name) {
+    return JSON.stringify(name === 'settings.json' ? appData.settings : appData.trades, null, 2);
+}
 
 async function autoSave() {
     if (!dirHandle) return;
@@ -437,10 +519,8 @@ async function journalSaveNow() {
         try { hasPermission = await verifyPermission(dirHandle, true); } catch (e) { hasPermission = false; }
         if (!hasPermission) throw new Error('no-permission');
         fileConnected = true;
-        const texts = {
-            'vwap-journal.json': JSON.stringify(appData.trades, null, 2),
-            'settings.json': JSON.stringify(appData.settings, null, 2)
-        };
+        const texts = {};
+        JOURNAL_FILES.forEach(name => { texts[name] = journalTextOf(name); });
         if (await journalChangedOutside()) {
             const keepMine = await journalAskWhichVersion();
             if (!keepMine) {
@@ -452,6 +532,9 @@ async function journalSaveNow() {
                 return;
             }
         }
+        // Last line of defence: never write an empty journal over a file that still has trades,
+        // unless the user just deleted the one trade this window knew about
+        if (!appData.trades.length && !(await journalEmptyOk())) throw new Error('empty-guard');
         for (const name of JOURNAL_FILES) {
             const handle = await dirHandle.getFileHandle(name, { create: true });
             const writable = await handle.createWritable();
@@ -469,7 +552,9 @@ async function journalSaveNow() {
         const first = !journalSaveError;
         journalSaveError = err && err.message === 'no-permission'
             ? 'No access to your journal folder.'
-            : 'Your journal could not be saved.';
+            : err && err.message === 'empty-guard'
+                ? 'Your journal on disk still has trades this window does not show, so it was not overwritten. Reload the page.'
+                : 'Your journal could not be saved.';
         journalStatusSync();
         if (first && typeof showToast === 'function') {
             showToast(`${journalSaveError} Your last change is not saved yet.`, 'error', {
@@ -477,6 +562,20 @@ async function journalSaveNow() {
             });
         }
     }
+}
+
+// May an empty trade list be written? Yes when the file on disk has no trades (or is gone), or when it
+// still holds the single trade this window loaded or wrote last (the user deleted their last trade).
+async function journalEmptyOk() {
+    let found;
+    try { found = await journalReadFile('vwap-journal.json'); } catch (e) { return false; }
+    if (found.missing || !found.text.trim()) return true;
+    let list;
+    try { list = journalTradesOf(JSON.parse(found.text)); } catch (e) { return false; }
+    if (!list) return false;
+    if (!list.length) return true;
+    const known = journalStamp['vwap-journal.json'];
+    return list.length === 1 && !!known && known.text === found.text;
 }
 
 // Remember the files as they are on disk now (after loading them)
@@ -591,6 +690,11 @@ function journalStatusSync() {
         el.className = 'journal-status is-error';
         el.innerHTML = `<span class="journal-status-dot"></span>File damaged<span class="journal-status-act">${typeof backupFeatureOn !== 'undefined' && backupFeatureOn ? 'Restore a backup' : 'What now?'}</span>`;
         el.title = journalDamaged.file + ' could not be read';
+    } else if (journalUnreadable) {
+        el.hidden = false;
+        el.className = 'journal-status is-error';
+        el.innerHTML = '<span class="journal-status-dot"></span>Not loaded<span class="journal-status-act">Try again</span>';
+        el.title = journalUnreadable.file + ' could not be read. Nothing was saved.';
     } else if (journalReadOnly) {
         el.hidden = false;
         el.className = 'journal-status is-readonly';
@@ -611,6 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('journal-status');
     if (el) el.addEventListener('click', () => {
         if (journalDamaged) { if (typeof backupFeatureOn !== 'undefined' && backupFeatureOn) backupRestoreDialog(); else backupDamagedDialog(); }
+        else if (journalUnreadable) journalRetryLoad();
         else if (journalReadOnly) journalTakeOver();
         else autoSave();
     });

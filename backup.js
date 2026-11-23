@@ -102,7 +102,10 @@ async function backupList() {
 // texts: { file name → text } as it should be kept
 async function backupWrite(reason, texts) {
     const root = await backupRoot(true);
-    let name = backupStamp() + (reason === 'daily' ? '' : `-${reason}`);
+    // A unique folder: two backups in the same minute (restore, then undo it) must never share one
+    const base = backupStamp() + (reason === 'daily' ? '' : `-${reason}`);
+    let name = base;
+    for (let i = 2; await backupExists(root, name); i++) name = `${base}-${i}`;
     const dir = await root.getDirectoryHandle(name, { create: true });
     let bytes = 0, trades = 0;
     for (const f of BACKUP_FILES) {
@@ -114,6 +117,10 @@ async function backupWrite(reason, texts) {
     await backupWriteText(dir, 'backup.json', JSON.stringify({ created: new Date().toISOString(), reason, trades, bytes }, null, 2));
     await backupPrune();
     return name;
+}
+
+async function backupExists(root, name) {
+    try { await root.getDirectoryHandle(name); return true; } catch (e) { return false; }
 }
 
 async function backupPrune() {
@@ -136,7 +143,7 @@ async function backupCurrentTexts() {
 
 // Called from loadDataFromFile, after reading and before the first save
 async function backupDailyIfNeeded() {
-    if (!backupFeatureOn || !dirHandle || journalDamaged || !backupPrefs().auto) return;
+    if (!backupFeatureOn || !dirHandle || journalDamaged || journalUnreadable || !backupPrefs().auto) return;
     const texts = await backupCurrentTexts();
     if (!texts['vwap-journal.json'] || texts['vwap-journal.json'].trim() === '[]') return; // nothing to keep yet
     const today = backupStamp().slice(0, 10);
@@ -242,20 +249,28 @@ async function backupRestore(b, skipConfirm) {
         });
         if (!ok) return;
     }
+    // The journal is used in another window: that window would write over the restored files
+    if (journalReadOnly && !journalDamaged && !journalUnreadable) {
+        showToast('Your journal is open in another window. Choose Use it here at the top first.', 'error');
+        return;
+    }
     try {
+        if (journalSaving) { try { await journalSaving; } catch (e) { /* restore anyway */ } }
+        journalReloading = true; // no save in between: the restored files are loaded next
         if (!journalDamaged) await backupWrite('before-restore', await backupCurrentTexts());
         for (const f of BACKUP_FILES) {
             const text = await backupReadText(b.dir, f);
             if (text !== null) await backupWriteText(dirHandle, f, text);
         }
         journalDamaged = null;
+        journalUnreadable = null;
         journalReadOnly = false;
-        journalReloading = true;
         await loadDataFromFile();
         if (typeof renderSettingsUI === 'function' && document.getElementById('view-settings').classList.contains('active')) renderSettingsUI();
         showToast(`Backup from ${backupLabel(b.created)} restored.`, 'success');
     } catch (e) {
         console.error('Restore failed', e);
+        journalReloading = false;
         showToast('The backup could not be restored. Your journal was not changed.', 'error');
     }
 }
@@ -283,7 +298,7 @@ async function backupSettingsEl(container) {
         <span class="backup-status-icon ${prefs.auto ? '' : 'is-off'}">${BACKUP_ICONS.shield}</span>
         <div class="backup-status-text">
             <strong>${prefs.auto ? 'Automatic backups are on' : 'Automatic backups are off'}</strong>
-            <span>${latest ? `Last backup: ${backupLabel(latest.created)} · ${latest.trades} trades · ${list.length} backups kept` : 'No backup yet: the first one is made the next time you open your journal.'}</span>
+            <span>${latest ? `Last backup: ${backupLabel(latest.created)} · ${latest.trades} trades · ${list.length} ${list.length === 1 ? 'backup' : 'backups'} kept` : 'No backup yet: the first one is made the next time you open your journal.'}</span>
         </div>
         <div class="backup-status-actions">
             <button type="button" class="btn-secondary btn-sm" data-backup="now">Back up now</button>

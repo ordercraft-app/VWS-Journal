@@ -55,7 +55,9 @@ Everything is saved in the folder you connected:
 | `settings.json` | Your lists, enabled sections and preferences |
 | `img/` | The screenshots of your trades |
 
-Your trades never leave your computer. To make a backup, copy the folder. To move to another computer, copy the folder there and connect it.
+Your trades never leave your computer. The journal makes a backup of your trades and settings every day in the `backups` folder inside your journal folder (Settings › Backups: back up now, restore, how long to keep them). For an extra copy with your screenshots, copy the whole folder. To move to another computer, copy the folder there and connect it.
+
+The journal never writes over a file it could not read: when a sync service or virus scanner holds the file for a moment, the app shows **Not loaded · Try again** and saves nothing until the file can be read again.
 
 ## Keyboard shortcuts
 
