@@ -285,7 +285,7 @@ function scalpQuickShotHtml() {
     const n = q.shots.length;
     if (n) {
         const zoom = typeof SHOTS_I !== 'undefined' ? SHOTS_I.expand : '';
-        const thumbs = q.shots.map((s, i) => `<span class="scalp-q-thumb"><button type="button" class="scalp-q-thumb-img" data-scalp-shot-view="${i}" aria-label="Enlarge screenshot ${i + 1}" title="Enlarge"><img class="scalp-q-shot-img" src="${s.url}" alt=""><span class="scalp-q-thumb-zoom" aria-hidden="true">${zoom}</span></button><button type="button" class="scalp-q-thumb-x" data-scalp-shot-remove="${i}" aria-label="Remove screenshot ${i + 1}" title="Remove">&times;</button></span>`).join('');
+        const thumbs = q.shots.map((s, i) => `<span class="scalp-q-thumb"><button type="button" class="scalp-q-thumb-img" data-scalp-shot-view="${i}" aria-label="Enlarge screenshot ${n - i}${i === 0 ? ' (latest)' : ''}" title="Enlarge"><img class="scalp-q-shot-img" src="${s.url}" alt=""><span class="scalp-q-thumb-zoom" aria-hidden="true">${zoom}</span></button><button type="button" class="scalp-q-thumb-x" data-scalp-shot-remove="${i}" aria-label="Remove screenshot ${n - i}" title="Remove">&times;</button></span>`).join('');
         const full = n >= (typeof SHOTS_MAX !== 'undefined' ? SHOTS_MAX : 10);
         return `<div class="scalp-q-shot has-shot"><span class="scalp-q-thumbs${n > 3 ? ' is-many' : ''}" role="group" aria-label="Screenshots">${thumbs}</span><span><strong>${n === 1 ? 'Screenshot added' : `${n} screenshots`}</strong></span>${c.supported && !full ? `<button type="button" class="btn-secondary btn-sm" data-scalp-capture>Add another ${scalpKbd('C')}</button>` : ''}</div>`;
     }
@@ -439,7 +439,7 @@ async function scalpQuickSetShot(fileOrBlob) {
         if (!scalpQ || !blob) return;
         const max = typeof SHOTS_MAX !== 'undefined' ? SHOTS_MAX : 10;
         if (scalpQ.shots.length >= max) { showToast(`A trade holds up to ${max} screenshots. Remove one to add another.`, 'error'); return false; }
-        scalpQ.shots.push({ blob, url: URL.createObjectURL(blob) });
+        scalpQ.shots.unshift({ blob, url: URL.createObjectURL(blob) }); // newest first (shots.js)
         scalpQuickRender();
         return true;
     } catch (e) { console.error(e); showToast('Could not read that image', 'error'); }
@@ -467,9 +467,10 @@ async function scalpQuickSave(andClose, close) {
     q.saving = true;
     const names = [];
     let failed = 0;
-    for (let k = 0; k < q.shots.length; k++) {
+    const shots = q.shots.slice().reverse(); // on disk oldest first, the latest last
+    for (let k = 0; k < shots.length; k++) {
         const name = `trade_${q.id}_${Date.now()}${k ? `_${k}` : ''}.webp`;
-        try { await saveImageToDir(q.shots[k].blob, name); names.push(name); } catch (e) { console.error(e); failed++; }
+        try { await saveImageToDir(shots[k].blob, name); names.push(name); } catch (e) { console.error(e); failed++; }
     }
     if (failed) showToast(failed === q.shots.length && failed === 1 ? 'The screenshot could not be saved; the trade is saved without it.' : `${failed} screenshot${failed === 1 ? '' : 's'} could not be saved; the trade is saved without ${failed === 1 ? 'it' : 'them'}.`, 'error');
     const screenshot = names.length ? names[names.length - 1] : null;
@@ -491,7 +492,7 @@ async function scalpQuickSave(andClose, close) {
 }
 async function scalpQuickFull(close) {
     const q = scalpQ; if (!q) return;
-    const keep = { symbol: q.symbol, direction: q.direction, setup: q.setup, setupCategory: q.setupCategory, result: q.result }, blobs = q.shots.map(s => s.blob);
+    const keep = { symbol: q.symbol, direction: q.direction, setup: q.setup, setupCategory: q.setupCategory, result: q.result }, blobs = q.shots.map(s => s.blob).reverse(); // oldest first: the form puts each new one in front
     close();
     await openTradeModal(null);
     if (tfState) {

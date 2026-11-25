@@ -9,6 +9,9 @@
 //  - Cards and list rows show how many screenshots a trade has (from 2).
 // Data: trade.screenshots = file names in the order they were added, only when there are 2 or more.
 // trade.screenshot always holds the latest one, so older versions of the app show that one.
+// On screen the newest comes first everywhere (stage, strip, viewer, Quick trade; 2026-11-25). A screenshot keeps
+// its number = the order it was taken (3 · Latest, 2, 1). shotsSt.items and scalpQ.shots are newest first;
+// shotsSave / scalpQuickSave write them back oldest first.
 // Nothing to migrate. Without the feature the form works on trade.screenshot as before and
 // keeps trade.screenshots in step (ui.js, Save).
 
@@ -29,7 +32,7 @@ function shotsStageShown() { try { return window.matchMedia(SHOTS_WIDE).matches;
 function shotsActive() { return typeof scalpFeatureOn !== 'undefined' && !!scalpFeatureOn; }
 
 // ---------- form state ----------
-// items: { file: name on disk or null (new), blob: new image or null, url }
+// items: { file: name on disk or null (new), blob: new image or null, url }, newest first (index 0 = latest)
 const shotsSt = { items: [], at: 0, removed: [], tradeId: null, number: '', symbol: '', open: false };
 
 // Object URLs of the form are our own (renderDashboard revokes the dashboard ones)
@@ -48,8 +51,8 @@ async function shotsFormOpened(trade) {
     shotsRevokeAll();
     const files = tradeShotFiles(trade);
     const items = [];
-    for (const f of files) items.push({ file: f, blob: null, url: await shotsFileUrl(f) });
-    Object.assign(shotsSt, { items, at: Math.max(0, items.length - 1), removed: [], tradeId: trade ? trade.id : null,
+    for (const f of files) items.unshift({ file: f, blob: null, url: await shotsFileUrl(f) });
+    Object.assign(shotsSt, { items, at: 0, removed: [], tradeId: trade ? trade.id : null,
         number: trade ? String(trade.number || '') : String(document.getElementById('t-number').value || ''), symbol: trade ? (trade.symbol || '') : '', open: true });
     if (tImageInput) tImageInput.multiple = true;
     shotsRender();
@@ -70,8 +73,8 @@ function shotsAdd(blob) {
         showToast(`A trade holds up to ${SHOTS_MAX} screenshots. Remove one to add another.`, 'error');
         return false;
     }
-    shotsSt.items.push({ file: null, blob, url: URL.createObjectURL(blob) });
-    shotsSt.at = shotsSt.items.length - 1;
+    shotsSt.items.unshift({ file: null, blob, url: URL.createObjectURL(blob) });
+    shotsSt.at = 0;
     isFormDirty = true;
     shotsRender();
     return true;
@@ -102,7 +105,7 @@ function shotsCount() { return shotsSt.items.length; }
 async function shotsSave(tradeId) {
     const names = [];
     let failed = 0, k = 0;
-    for (const it of shotsSt.items) {
+    for (const it of shotsSt.items.slice().reverse()) { // on disk oldest first, the latest last
         if (it.file) { names.push(it.file); continue; }
         const name = `trade_${tradeId}_${Date.now()}${k ? `_${k}` : ''}.webp`; k++;
         try { await saveImageToDir(it.blob, name); it.file = name; names.push(name); }
@@ -151,17 +154,17 @@ function shotsStage() {
         st.innerHTML = `<button type="button" class="shots-empty" data-shots-add>${SHOTS_I.img}<strong>The chart of this trade shows here</strong><span>Paste a screenshot (${shotsKbd(A === 'Option' ? 'Cmd' : 'Ctrl')} ${shotsKbd('V')}), drop it here or use Auto-Capture (${shotsKbd('C')}). Add as many as you like.</span></button>`;
         return;
     }
-    const at = shotsSt.at, it = shotsSt.items[at], latest = at === n - 1;
+    const at = shotsSt.at, it = shotsSt.items[at], latest = at === 0, no = n - at; // number = order taken
     st.innerHTML = `
-        <div class="shots-head"><span class="shots-title">${escapeHTML(shotsLabel())}</span><span class="shots-count">Screenshot ${at + 1} of ${n}${latest ? ' · <b>latest</b>' : ''}</span>
+        <div class="shots-head"><span class="shots-title">${escapeHTML(shotsLabel())}</span><span class="shots-count">Screenshot ${no} of ${n}${latest ? ' · <b>latest</b>' : ''}</span>
             ${it.url ? `<button type="button" class="shots-enlarge" data-shots-enlarge>${SHOTS_I.expand}Enlarge</button>` : ''}</div>
         <div class="shots-frame">
-            ${n > 1 ? `<button type="button" class="shots-arrow is-left" data-shots-go="-1" aria-label="Previous screenshot" ${at === 0 ? 'disabled' : ''}>${SHOTS_I.left}</button>` : ''}
-            ${it.url ? `<img src="${it.url}" alt="Screenshot ${at + 1} of ${n}" data-shots-enlarge>` : `<div class="shots-missing">This screenshot is not in the img folder of your journal.</div>`}
-            ${n > 1 ? `<button type="button" class="shots-arrow is-right" data-shots-go="1" aria-label="Next screenshot" ${latest ? 'disabled' : ''}>${SHOTS_I.right}</button>` : ''}
+            ${n > 1 ? `<button type="button" class="shots-arrow is-left" data-shots-go="-1" aria-label="Newer screenshot" ${latest ? 'disabled' : ''}>${SHOTS_I.left}</button>` : ''}
+            ${it.url ? `<img src="${it.url}" alt="Screenshot ${no} of ${n}" data-shots-enlarge>` : `<div class="shots-missing">This screenshot is not in the img folder of your journal.</div>`}
+            ${n > 1 ? `<button type="button" class="shots-arrow is-right" data-shots-go="1" aria-label="Older screenshot" ${at === n - 1 ? 'disabled' : ''}>${SHOTS_I.right}</button>` : ''}
         </div>
-        ${n > 1 ? `<div class="shots-thumbs" role="group" aria-label="Screenshots">${shotsSt.items.map((x, i) => `<button type="button" class="shots-thumb${i === at ? ' is-on' : ''}" data-shots-pick="${i}" aria-label="Screenshot ${i + 1}" aria-pressed="${i === at}">${x.url ? `<img src="${x.url}" alt="">` : ''}</button>`).join('')}</div>` : ''}
-        <p class="shots-hint">${n > 1 ? `${shotsKbd(A)} ${shotsKbd('←')} ${shotsKbd('→')} previous / next while you fill in the form` : 'Paste or capture another screenshot to add it'}</p>`;
+        ${n > 1 ? `<div class="shots-thumbs" role="group" aria-label="Screenshots">${shotsSt.items.map((x, i) => `<button type="button" class="shots-thumb${i === at ? ' is-on' : ''}" data-shots-pick="${i}" aria-label="Screenshot ${n - i}${i === 0 ? ' (latest)' : ''}" aria-pressed="${i === at}">${x.url ? `<img src="${x.url}" alt="">` : ''}</button>`).join('')}</div>` : ''}
+        <p class="shots-hint">${n > 1 ? `${shotsKbd(A)} ${shotsKbd('←')} ${shotsKbd('→')} newer / older while you fill in the form` : 'Paste or capture another screenshot to add it'}</p>`;
 }
 
 function shotsStrip() {
@@ -177,11 +180,12 @@ function shotsStrip() {
     // Without the stage (smaller screens) a thumbnail opens the enlarged view instead
     const wide = shotsStageShown();
     s.classList.toggle('is-narrow', !wide);
-    s.innerHTML = shotsSt.items.map((x, i) => `<div class="shots-chip${i === shotsSt.at ? ' is-on' : ''}"><button type="button" class="shots-chip-img" data-shots-pick="${i}" aria-label="${wide ? 'Show' : 'Enlarge'} screenshot ${i + 1}${i === n - 1 ? ' (latest)' : ''}"${wide ? ` aria-pressed="${i === shotsSt.at}"` : ''} title="${wide ? 'Show next to the form' : 'Enlarge'}">${x.url ? `<img src="${x.url}" alt="">` : ''}<span class="shots-chip-n">${i + 1}</span>${i === n - 1 ? '<span class="shots-chip-tag">Latest</span>' : ''}${x.url ? `<span class="shots-chip-zoom" aria-hidden="true">${SHOTS_I.expand}</span>` : ''}</button><button type="button" class="shots-chip-x" data-shots-remove="${i}" aria-label="Remove screenshot ${i + 1}" title="Remove">&times;</button></div>`).join('')
+    s.innerHTML = shotsSt.items.map((x, i) => `<div class="shots-chip${i === shotsSt.at ? ' is-on' : ''}"><button type="button" class="shots-chip-img" data-shots-pick="${i}" aria-label="${wide ? 'Show' : 'Enlarge'} screenshot ${n - i}${i === 0 ? ' (latest)' : ''}"${wide ? ` aria-pressed="${i === shotsSt.at}"` : ''} title="${wide ? 'Show next to the form' : 'Enlarge'}">${x.url ? `<img src="${x.url}" alt="">` : ''}<span class="shots-chip-n">${n - i}</span>${i === 0 ? '<span class="shots-chip-tag">Latest</span>' : ''}${x.url ? `<span class="shots-chip-zoom" aria-hidden="true">${SHOTS_I.expand}</span>` : ''}</button><button type="button" class="shots-chip-x" data-shots-remove="${i}" aria-label="Remove screenshot ${n - i}" title="Remove">&times;</button></div>`).join('')
         + (n < SHOTS_MAX ? `<button type="button" class="shots-add" data-shots-add>${SHOTS_I.plus}<span>Add</span><small>paste · drop · capture</small></button>` : `<span class="shots-full help-text">${SHOTS_MAX} screenshots: the most a trade holds</span>`);
 }
 
 // ---------- the image viewer as a carousel ----------
+// urls: newest first (every caller), the number shown = the order taken (n - index)
 const shotsView = { urls: [], at: 0, label: '', fromForm: false };
 // Called by openImageViewer (storage.js): a single image shows without the carousel parts
 function shotsViewerReset() {
@@ -208,12 +212,12 @@ function shotsViewerRender() {
     const hadGo = had && had.dataset.shotsVgo, hadPick = had && had.dataset.shotsVpick !== undefined;
     if (!bar) { bar = document.createElement('div'); bar.id = 'shots-viewer'; imageViewerModal.appendChild(bar); }
     enlargedImage.src = urls[at];
-    enlargedImage.alt = `Screenshot ${at + 1} of ${n}`;
+    enlargedImage.alt = `Screenshot ${n - at} of ${n}`;
     bar.innerHTML = `
-        <button type="button" class="shots-varrow is-left" data-shots-vgo="-1" aria-label="Previous screenshot" ${at === 0 ? 'disabled' : ''}>${SHOTS_I.left}</button>
-        <button type="button" class="shots-varrow is-right" data-shots-vgo="1" aria-label="Next screenshot" ${at === n - 1 ? 'disabled' : ''}>${SHOTS_I.right}</button>
-        <div class="shots-vfoot"><span class="shots-vcap">${label ? `${escapeHTML(label)} · ` : ''}${at + 1} / ${n}</span>
-            <div class="shots-vthumbs" role="group" aria-label="Screenshots">${urls.map((u, i) => `<button type="button" class="shots-thumb${i === at ? ' is-on' : ''}" data-shots-vpick="${i}" aria-label="Screenshot ${i + 1}" aria-pressed="${i === at}"><img src="${u}" alt=""></button>`).join('')}</div></div>`;
+        <button type="button" class="shots-varrow is-left" data-shots-vgo="-1" aria-label="Newer screenshot" ${at === 0 ? 'disabled' : ''}>${SHOTS_I.left}</button>
+        <button type="button" class="shots-varrow is-right" data-shots-vgo="1" aria-label="Older screenshot" ${at === n - 1 ? 'disabled' : ''}>${SHOTS_I.right}</button>
+        <div class="shots-vfoot"><span class="shots-vcap">${label ? `${escapeHTML(label)} · ` : ''}${n - at} / ${n}${at === 0 ? ' · latest' : ''}</span>
+            <div class="shots-vthumbs" role="group" aria-label="Screenshots">${urls.map((u, i) => `<button type="button" class="shots-thumb${i === at ? ' is-on' : ''}" data-shots-vpick="${i}" aria-label="Screenshot ${n - i}${i === 0 ? ' (latest)' : ''}" aria-pressed="${i === at}"><img src="${u}" alt=""></button>`).join('')}</div></div>`;
     if (had) {
         let next = null;
         if (hadPick) next = bar.querySelector(`[data-shots-vpick="${at}"]`);
@@ -249,8 +253,8 @@ function shotsOpenTrade(imgEl) {
     (async () => {
         const urls = [];
         for (const f of files) urls.push(f === t.screenshot && imgEl.dataset.imgUrl ? imgEl.dataset.imgUrl : await getImageUrl(f));
-        const valid = urls.filter(Boolean);
-        shotsViewer(valid, valid.length - 1, [t.number ? `Trade ${t.number}` : '', t.symbol].filter(Boolean).join(' · '));
+        const valid = urls.filter(Boolean).reverse(); // newest first
+        shotsViewer(valid, 0, [t.number ? `Trade ${t.number}` : '', t.symbol].filter(Boolean).join(' · '));
     })();
     return true;
 }
